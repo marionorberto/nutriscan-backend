@@ -591,7 +591,23 @@ export class UsersService {
     }
   }
 
-  async checkUserIsAdmin(user: User) {
+  checkUserIsAdmin(user: User) {
     return user.role == 'ADMIN';
+  }
+
+  async checkUserIsAuthenticated(id: string) {
+    const user = await this.userRepo.findOneBy({ id });
+
+    if (!user)
+      throw new HttpException(
+        {
+          statusCode: 404,
+          method: 'GET',
+          message: 'Failure to fetch this user.',
+          path: '/users/user/:id',
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
   }
 }

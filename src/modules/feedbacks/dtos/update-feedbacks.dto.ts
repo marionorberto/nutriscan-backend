@@ -1,31 +1,30 @@
 import {
   IsString,
-  IsEmail,
+  IsNotEmpty,
   MaxLength,
   MinLength,
-  IsNotEmpty,
+  IsNumber,
+  IsEnum,
   IsOptional,
 } from 'class-validator';
+import { EnumFeedbackType } from '../interfaces/interfaces';
 
-export class UpdateUsersDto {
-  @MaxLength(40, { message: 'O Username deve ter no máximo 40 caracteres!' })
-  @MinLength(3, { message: 'O Username deve ter no mínimo 3 caracteres!' })
-  @IsString()
+export class UpdateFeedbackDto {
+  @IsNumber({}, { message: '*Avaliação deve ser um número!' })
+  @IsNotEmpty({ message: '*Avaliação não poder estar vazio!' })
   @IsOptional()
-  username: string;
+  rate: number;
 
-  @IsEmail({}, { message: 'Por favor introduza um Email válido!' })
-  @IsString({ message: 'O Email deve ser uma string!' })
-  @MaxLength(50, { message: 'O Email deve ter no máximo 50 caracteres!' })
-  @MinLength(12, { message: 'O Email deve ter no mínimo 12 caracteres!' })
-  @IsNotEmpty({ message: 'O Email deve pode estar vazio!' })
+  @IsEnum({ message: '*tipo fora do padrão requerido.' })
+  @IsString({ message: '*tipo não pode ser Inválida!' })
+  @IsNotEmpty({ message: '*tipo não poder estar vazio!' })
   @IsOptional()
-  email: string;
+  feedbackType: EnumFeedbackType;
 
-  @IsString({ message: 'A Password não pode ser Inválida!' })
-  @IsNotEmpty({ message: 'A Password não poder estar vazio!' })
-  @MaxLength(30, { message: 'A Password deve ter no máximo 30 caracteres!' })
-  @MinLength(8, { message: 'A Password deve ter no mínimo 8 caracteres!' })
+  @IsString({ message: '*Comentário deve ser um texto!' })
+  @IsNotEmpty({ message: '*Comentário não poder estar vazio!' })
+  @MaxLength(200, { message: '*Comentário deve ter no máximo 200 caracteres!' })
+  @MinLength(15, { message: '*Comentário deve ter no mínimo 15 caracteres!' })
   @IsOptional()
-  password: string;
+  comment: string;
 }

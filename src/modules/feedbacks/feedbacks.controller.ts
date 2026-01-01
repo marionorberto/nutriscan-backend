@@ -12,46 +12,54 @@ import {
   Req,
 } from '@nestjs/common';
 import { FeedbacksService } from './feedbacks.service';
-import { CreateUsersDto } from './dtos/create-feebacks.dto';
-import { UpdateUsersDto } from './dtos/update-feedbacks.dto';
+import { CreateFeedbackDto } from './dtos/create-feebacks.dto';
+import { UpdateFeedbackDto } from './dtos/update-feedbacks.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('feedbacks')
 export class FeedbacksController {
-  constructor(private readonly usersServices: FeedbacksService) {}
+  constructor(private readonly feedbackService: FeedbacksService) {}
 
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(@Req() request: Request) {
+    return await this.feedbackService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('feedback')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param() id: string, @Req() request: Request) {
+    return await this.feedbackService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
-    @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+  @Post('create/feedback')
+  create(
+    @Param() request: Request,
+    @Body() createfeedbackDto: CreateFeedbackDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.feedbackService.create(request, createfeedbackDto);
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/feedback')
+  async updateOne(
+    @Param() id: string,
+    @Req() request: Request,
+    @Body() updateFeedbacksDto: UpdateFeedbackDto,
+  ) {
+    return await this.feedbackService.updateOne(
+      id,
+      request,
+      updateFeedbacksDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/feedback/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.feedbackService.deleteOne(id, request);
   }
 }
