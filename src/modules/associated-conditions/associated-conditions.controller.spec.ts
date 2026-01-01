@@ -1,15 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from './associated-conditions.controller';
+import { AssociatedConditionsController } from './associated-conditions.controller';
 
-describe('UsersController', () => {
-  let controller: UsersController;
+describe('AssociatedConditionsController', () => {
+  let controller: AssociatedConditionsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UsersController],
+      controllers: [AssociatedConditionsController],
     }).compile();
 
-    controller = module.get<UsersController>(UsersController);
+    controller = module.get<AssociatedConditionsController>(
+      AssociatedConditionsController,
+    );
   });
 
   it('should be defined', () => {

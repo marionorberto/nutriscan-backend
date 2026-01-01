@@ -12,46 +12,59 @@ import {
   Req,
 } from '@nestjs/common';
 import { AssociatedConditionsService } from './associated-conditions.service';
-import { CreateUsersDto } from './dtos/create-associated-.conditions.dto';
-import { UpdateUsersDto } from './dtos/update-associated-conditions.dto';
+import { CreateAssociatedConditionDto } from './dtos/create-associated-.conditions.dto';
+import { UpdateAssociatedConditionDto } from './dtos/update-associated-conditions.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('associated-conditions')
 export class AssociatedConditionsController {
-  constructor(private readonly usersServices: AssociatedConditionsService) {}
+  constructor(
+    private readonly associatedConditionService: AssociatedConditionsService,
+  ) {}
 
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(@Req() request: Request) {
+    return await this.associatedConditionService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('associated-condition')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param('id') id: string, @Req() request: Request) {
+    return await this.associatedConditionService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
+  @Post('create/associated-condition')
+  create(
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+    @Body() createAssociatedConditionDto: CreateAssociatedConditionDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.associatedConditionService.create(
+      request,
+      createAssociatedConditionDto,
+    );
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/associated-condition')
+  async updateOne(
+    @Param('id') id: string,
+    @Req() request: Request,
+    @Body() updateAssociatedConditionDto: UpdateAssociatedConditionDto,
+  ) {
+    return await this.associatedConditionService.updateOne(
+      id,
+      request,
+      updateAssociatedConditionDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/associated-condition/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.associatedConditionService.deleteOne(id, request);
   }
 }

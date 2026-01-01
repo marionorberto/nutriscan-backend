@@ -1,25 +1,52 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateUsersDto } from './dtos/create-associated-.conditions.dto';
-import { UpdateUsersDto } from './dtos/update-associated-conditions.dto';
-import * as bcryptjs from 'bcryptjs';
+import { CreateAssociatedConditionDto } from './dtos/create-associated-.conditions.dto';
+import { UpdateAssociatedConditionDto } from './dtos/update-associated-conditions.dto';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
+import { AssociatedConditions } from '@database/entities/associated-conditions/associated-condition.entity';
+import { UsersService } from '@modules/users/users.service';
 @Injectable()
 export class AssociatedConditionsService {
-  private userRepository: Repository<User>;
-  constructor(private readonly datasource: DataSource) {
-    this.userRepository = this.datasource.getRepository(User);
+  private userRepo: Repository<User>;
+  private associatedConditionRepo: Repository<AssociatedConditions>;
+  constructor(
+    private readonly datasource: DataSource,
+    private readonly userService: UsersService,
+  ) {
+    this.userRepo = this.datasource.getRepository(User);
+    this.associatedConditionRepo =
+      this.datasource.getRepository(AssociatedConditions);
   }
 
-  async findAll() {
+  async findAll(request: Request) {
     try {
+      const { idUser } = request['user'];
+
+      const { data } = await this.userService.findById(idUser);
+
+      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
+
+      if (!isAdminUserAction)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'DELETE',
+            message: 'User do not have suficcient permission',
+            path: '/allergies/delete/:id',
+            timestamp: Date.now(),
+          },
+          HttpStatus.FORBIDDEN,
+        );
+
+      const allergies = this.associatedConditionRepo.findAndCount();
+
       return {
         statusCode: 200,
         method: 'GET',
-        message: 'Users fetched sucessfully.',
-        data: [],
-        path: '/users/all',
+        message: 'Allergies fetched sucessfully.',
+        data: allergies,
+        path: '/allergies/all',
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -27,11 +54,27 @@ export class AssociatedConditionsService {
     }
   }
 
-  async findByPk(request: Request) {
+  async findByPk(id: string, request: Request) {
     try {
       const { idUser } = request['user'];
 
-      const user = await this.userRepository.findOneBy({ id: idUser });
+      const { data } = await this.userService.findById(idUser);
+
+      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
+
+      if (!isAdminUserAction)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'DELETE',
+            message: 'User do not have suficcient permission',
+            path: '/allergies/delete/:id',
+            timestamp: Date.now(),
+          },
+          HttpStatus.FORBIDDEN,
+        );
+
+      const user = await this.userRepo.findOneBy({ id: idUser });
 
       if (!user)
         throw new HttpException(
@@ -45,26 +88,28 @@ export class AssociatedConditionsService {
           HttpStatus.NOT_FOUND,
         );
 
+      const allergy = this.associatedConditionRepo.findOneBy({ id });
+
       return {
         statusCode: 200,
         method: 'GET',
-        message: 'User fetched sucessfully.',
-        data: user,
-        path: '/users/user/:id',
+        message: 'Allergy fetched sucessfully.',
+        data: allergy,
+        path: '/allergies/allergy/:id',
         timestamp: Date.now(),
       };
     } catch (error) {
       console.log(
-        `Failed to fetch this user. | Error Message: ${error.message}`,
+        `Failed to fetch this allergy. | Error Message: ${error.message}`,
       );
 
       throw new HttpException(
         {
           statusCode: 404,
           method: 'GET',
-          message: 'Failed to fetch this user.',
+          message: 'Failed to fetch this allergy.',
           error: error.message,
-          path: '/users/user/:id',
+          path: '/allergies/allergy/:id',
           timestamp: Date.now(),
         },
         HttpStatus.NOT_FOUND,
@@ -72,12 +117,37 @@ export class AssociatedConditionsService {
     }
   }
 
-  async create(createUsersDto: CreateUsersDto) {
+  async create(
+    request: Request,
+    createAssociatedConditionDto: CreateAssociatedConditionDto,
+  ) {
     try {
-      const userToSave = this.userRepository.create(createUsersDto);
-      const userSaved = await this.userRepository.save(userToSave);
+      const { idUser } = request['user'];
 
-      const { id, username, email, createdAt } = userSaved;
+      const { data } = await this.userService.findById(idUser);
+
+      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
+
+      if (!isAdminUserAction)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'DELETE',
+            message: 'User do not have suficcient permission',
+            path: '/allergies/delete/:id',
+            timestamp: Date.now(),
+          },
+          HttpStatus.FORBIDDEN,
+        );
+
+      const associatedConditionToSave = this.associatedConditionRepo.create(
+        createAssociatedConditionDto,
+      );
+      const allergySaved = await this.associatedConditionRepo.save(
+        associatedConditionToSave,
+      );
+
+      const { id, description, createdAt } = allergySaved;
 
       return {
         statusCode: 201,
@@ -85,26 +155,24 @@ export class AssociatedConditionsService {
         message: 'User created sucessfully',
         data: {
           id,
-          username,
-          email,
-          password: createUsersDto.password,
+          description,
           createdAt,
         },
-        path: '/users/create/user',
+        path: '/allergies/create/allergy',
         timestamp: Date.now(),
       };
     } catch (error) {
       console.log(
-        `Failed  to create a new User | Error Message: ${error.message}`,
+        `Failed  to create a new Allergy | Error Message: ${error.message}`,
       );
 
       throw new HttpException(
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falhou ao cadastrar usuário, ${error.message}`,
+          message: `Falha ao cadastrar nova *Allergia, ${error.message}`,
           error: error.message,
-          path: '/users/create/user',
+          path: '/allergies/create/allergy',
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -112,49 +180,60 @@ export class AssociatedConditionsService {
     }
   }
 
-  async updateOne(request: Request, updateUsersDto: Partial<UpdateUsersDto>) {
+  async updateOne(
+    id: string,
+    request: Request,
+    updateAllergiesDto: Partial<UpdateAssociatedConditionDto>,
+  ) {
     try {
-      const { idUser: id } = request['user'];
+      const { idUser } = request['user'];
 
-      if (updateUsersDto.password) {
-        const salt = await bcryptjs.genSalt(10);
-        updateUsersDto.password = await bcryptjs.hash(
-          updateUsersDto.password,
-          salt,
+      const { data } = await this.userService.findById(idUser);
+
+      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
+
+      if (!isAdminUserAction)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'DELETE',
+            message: 'User do not have suficcient permission',
+            path: '/allergies/delete/:id',
+            timestamp: Date.now(),
+          },
+          HttpStatus.FORBIDDEN,
         );
-      }
 
-      await this.userRepository.update(id, updateUsersDto);
+      await this.associatedConditionRepo.update(id, updateAllergiesDto);
 
-      const { username, email, createdAt, updatedAt } =
-        await this.userRepository.findOneBy({ id });
+      const { description, createdAt, updatedAt } =
+        await this.associatedConditionRepo.findOneBy({ id });
 
       return {
         statusCode: 200,
         method: 'PUT',
-        message: 'User updated sucessfully',
+        message: 'Allergies updated sucessfully',
         data: {
           id,
-          username,
-          email,
+          description,
           createdAt,
           updatedAt,
         },
-        path: '/users/update/user/:id',
+        path: '/allergies/update/allergy/:id',
         timestamp: Date.now(),
       };
     } catch (error) {
       console.log(
-        `Failed to update new User | Error Message: ${error.message}`,
+        `Failed to update new Allergy | Error Message: ${error.message}`,
       );
 
       throw new HttpException(
         {
           statusCode: 400,
           method: 'PUT',
-          message: 'Não foi possível atualizar dados do usuário!',
+          message: 'Não foi possível atualizar dados da entidade *Allergy!',
           error: error.message,
-          path: '/users/update/user/:id',
+          path: '/allergies/update/allergy/:id',
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -162,28 +241,48 @@ export class AssociatedConditionsService {
     }
   }
 
-  async deleteOne(id: string) {
+  async deleteOne(id: string, request: Request) {
     try {
-      const userToDelete = await this.userRepository.findOneBy({ id });
-      if (!userToDelete)
+      const { idUser } = request['user'];
+
+      const { data } = await this.userService.findById(idUser);
+
+      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
+
+      if (!isAdminUserAction)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'DELETE',
+            message: 'User do not have suficcient permission',
+            path: '/allergies/delete/:id',
+            timestamp: Date.now(),
+          },
+          HttpStatus.FORBIDDEN,
+        );
+
+      const allergyToDelete = await this.associatedConditionRepo.findOneBy({
+        id,
+      });
+      if (!allergyToDelete)
         throw new HttpException(
           {
             statusCode: 404,
             method: 'GET',
-            message: 'User Not Found',
-            path: '/users/user/:id',
+            message: 'Allergy Not Found',
+            path: '/allergies/allergy/:id',
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
         );
 
-      await this.userRepository.remove(userToDelete);
+      await this.associatedConditionRepo.remove(allergyToDelete);
 
       return {
         statusCode: 200,
         method: 'DELETE',
-        message: 'User deleted sucessfully',
-        path: '/users/delete/user/:id',
+        message: 'Allergy deleted sucessfully',
+        path: '/allergies/delete/allergy/:id',
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -193,171 +292,9 @@ export class AssociatedConditionsService {
         {
           statusCode: 400,
           method: 'DELETE',
-          message: 'Failed to delete User',
+          message: 'Failed to delete Allergy',
           error: error.message,
-          path: '/users/delete/user/:id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async findOne(data: any) {
-    try {
-      const userFetched: User = await this.userRepository.findOne(data);
-
-      if (!userFetched.active) {
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário Desativado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      if (!userFetched)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário não encontrado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-
-      return {
-        id: userFetched.id,
-        username: userFetched.username,
-        password: userFetched.password,
-      };
-    } catch (error) {
-      console.log(`Failed to fetch User | Error Message: ${error.message}`);
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'POST',
-          message: error.message,
-          error: error.message,
-          path: '/users/user/id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async lastUsersRegistered() {
-    try {
-      const [lastTwoDoctors] = await Promise.all([
-        this.userRepository.find({
-          order: { createdAt: 'DESC' },
-          take: 2,
-        }),
-      ]);
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          lastTwoDoctors,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async ban(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: false,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async active(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: true,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' activado sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
+          path: '/allergies/delete/allergy/:id',
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

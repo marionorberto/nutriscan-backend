@@ -4,9 +4,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   CreateDateColumn,
-  ManyToOne,
 } from 'typeorm';
-import { User } from '../users/user.entity';
 
 @Entity('associated_conditions')
 export class AssociatedConditions {
@@ -15,9 +13,6 @@ export class AssociatedConditions {
 
   @Column({ name: 'description', type: 'varchar', length: '60' })
   description: string;
-
-  @ManyToOne(() => User, (users) => users.associatedCondition)
-  user: User;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
