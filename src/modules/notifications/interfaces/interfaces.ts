@@ -12,3 +12,8 @@ export enum EnumCategory {
   promo = 'PROMO',
   update = 'update',
 }
+
+export enum EnumNotificationCreator {
+  admin = 'ADMIN',
+  system = 'SYSTEM',
+}

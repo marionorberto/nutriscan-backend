@@ -1,31 +1,39 @@
 import {
-  IsString,
+  IsEnum,
   IsNotEmpty,
-  IsEmail,
+  IsOptional,
+  IsString,
   MaxLength,
   MinLength,
-  IsOptional,
 } from 'class-validator';
+import { EnumCategory } from '../interfaces/interfaces';
 
-export class CreateUsersDto {
-  @MaxLength(40, { message: 'O Username deve ter no máximo 40 caracteres!' })
-  @MinLength(3, { message: 'O Username deve ter no mínimo 3 caracteres!' })
-  @IsString()
-  @IsOptional()
-  username: string;
+export class CreateNotificationsDto {
+  @MaxLength(100, { message: '*Título deve ter no máximo 100 caracteres.' })
+  @MinLength(10, { message: '*Título deve ter no mínimo 10 caracteres.' })
+  @IsString({ message: '*Título deve ser um texto.' })
+  @IsNotEmpty({ message: '*Título não pode estar vazio' })
+  title: string;
 
-  @IsEmail({}, { message: 'Por favor introduza um Email válido!' })
-  @IsString({ message: 'O Email deve ser uma string!' })
-  @MaxLength(50, { message: 'O Email deve ter no máximo 50 caracteres!' })
-  @MinLength(12, { message: 'O Email deve ter no mínimo 12 caracteres!' })
-  @IsNotEmpty({ message: 'O Email deve pode estar vazio!' })
+  @MaxLength(100, { message: '*Subtítulo deve ter no máximo 100 caracteres.' })
+  @MinLength(10, { message: '*Subtítulo deve ter no mínimo 10 caracteres.' })
+  @IsString({ message: '*Subtítulo deve ser um texto.' })
+  @IsNotEmpty({ message: '*Subtítulo não pode estar vazio.' })
   @IsOptional()
-  email: string;
+  subtitle?: string;
 
-  @IsString({ message: 'A Password não pode ser Inválida!' })
-  @IsNotEmpty({ message: 'A Password não poder estar vazio!' })
-  @MaxLength(30, { message: 'A Password deve ter no máximo 30 caracteres!' })
-  @MinLength(8, { message: 'A Password deve ter no mínimo 8 caracteres!' })
-  @IsOptional()
-  password: string;
+  @MaxLength(200, { message: '*Conteúdo deve ter no máximo 200 caracteres.' })
+  @MinLength(10, { message: '*Conteúdo deve ter no mínimo 200 caracteres.' })
+  @IsString({ message: '*Conteúdo deve ser um texto.' })
+  @IsNotEmpty()
+  content: string;
+
+  @IsString({ message: '*Emoji deve ser um texto.' })
+  @IsNotEmpty({ message: '*Emoji não pode estar vazio.' })
+  emoji?: string;
+
+  @IsString({ message: '*Categoria deve ser um texto.' })
+  @IsNotEmpty({ message: '*Categoria não pode estar vazia.' })
+  @IsEnum({ Enum: EnumCategory })
+  category: EnumCategory;
 }

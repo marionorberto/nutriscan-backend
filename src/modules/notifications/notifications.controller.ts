@@ -1,57 +1,96 @@
 import {
-  Body,
   Controller,
-  Get,
-  Param,
   Post,
-  Put,
-  Delete,
+  Body,
+  Get,
   UseGuards,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   Req,
+  Delete,
+  Param,
+  Put,
 } from '@nestjs/common';
 import { NotificationService } from './notifications.service';
-import { CreateUsersDto } from './dtos/create-notifications.dto';
-import { UpdateUsersDto } from './dtos/update-notifications.dto';
-import { AuthGuard } from '../../shared/auth/auth.guard';
+import { CreateNotificationsDto } from './dtos/create-notifications.dto';
 import { Request } from 'express';
+import { EnumCategory } from './interfaces/interfaces';
+import { UpdateNotificationsDto } from './dtos/update-notifications.dto';
+import { AuthGuard } from 'shared/auth/auth.guard';
 
 @Controller('notifications')
-export class notificationController {
-  constructor(private readonly usersServices: NotificationService) {}
+export class NotificationsController {
+  constructor(private notificationsServices: NotificationService) {}
 
   @UseGuards(AuthGuard)
-  @Get('all')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  @Get('all-admin-notifications')
+  async findNotificationCreatedByAdmin(@Req() request: Request) {
+    return await this.notificationsServices.findNotificationCreatedByAdmin(
+      request,
+    );
   }
 
-  @UseGuards(AuthGuard)
-  @Get('user')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  @Get('all-system-notifications')
+  async findNotificationCreatedBySystem(@Req() request: Request) {
+    return await this.notificationsServices.findNotificationCreatedBySystem(
+      request,
+    );
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
+  @Get('notification/:idNotification')
+  async findUserNotificationByPk(
+    @Param('idNotification') idNotification: string,
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return await this.notificationsServices.findUserNotificationByPk(
+      idNotification,
+      request,
+    );
   }
 
-  @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Post('create/admin-notification')
+  createAdminNotifications(
+    @Req() request: Request,
+    @Body() createNotificationsDto: CreateNotificationsDto,
+  ) {
+    return this.notificationsServices.createAdminNotifications(
+      request,
+      createNotificationsDto,
+    );
+  }
+
+  @Post('create/notification')
+  create(createNotificationsDto: {
+    title: string;
+    subtitle?: string;
+    content: string;
+    emoji?: string;
+    category: EnumCategory;
+  }) {
+    return this.notificationsServices.createSystemNotification(
+      createNotificationsDto,
+    );
+  }
+
+  @Put('update/notification/:idNotification')
+  async updateOneByAdmin(
+    @Param('idNotification') idNotification: string,
+    @Req() request: Request,
+    @Body() updateNotificationsDto: Partial<UpdateNotificationsDto>,
+  ) {
+    return await this.notificationsServices.updateOneByAdmin(
+      idNotification,
+      request,
+      updateNotificationsDto,
+    );
+  }
+
+  @Delete('delete/notification/:idNotification')
+  async deleteOneByAdmin(
+    @Param('idNotification') idNotification: string,
+    @Req() request: Request,
+  ) {
+    return await this.notificationsServices.deleteOneByAdmin(
+      idNotification,
+      request,
+    );
   }
 }
