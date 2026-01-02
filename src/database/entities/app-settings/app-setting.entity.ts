@@ -22,10 +22,10 @@ export class AppSettings {
   enableNutricionalAlert: boolean;
 
   @Column({ name: 'share_data_for_training', type: 'boolean' })
-  shareDataForTraining: string;
+  shareDataForTraining: boolean;
 
   @Column({ name: 'notification_enabled', type: 'boolean' })
-  notificationEnabled: string;
+  notificationEnabled: boolean;
 
   @Column({
     name: 'theme',

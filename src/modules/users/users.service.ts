@@ -609,5 +609,7 @@ export class UsersService {
         },
         HttpStatus.NOT_FOUND,
       );
+
+    return user;
   }
 }

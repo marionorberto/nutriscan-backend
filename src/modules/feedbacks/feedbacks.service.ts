@@ -196,7 +196,7 @@ export class FeedbacksService {
     try {
       const { idUser } = request['user'];
 
-      this.userService.checkUserIsAuthenticated(idUser);
+      await this.userService.checkUserIsAuthenticated(idUser);
 
       const feedbackToDelete = await this.feedbackRepo.findOneBy({ id });
 

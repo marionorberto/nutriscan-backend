@@ -1,31 +1,36 @@
-import {
-  IsString,
-  IsEmail,
-  MaxLength,
-  MinLength,
-  IsNotEmpty,
-  IsOptional,
-} from 'class-validator';
+import { IsString, IsBoolean, IsNotEmpty } from 'class-validator';
+import { EnumTheme } from '../interfaces/interfaces';
 
-export class UpdateUsersDto {
-  @MaxLength(40, { message: 'O Username deve ter no máximo 40 caracteres!' })
-  @MinLength(3, { message: 'O Username deve ter no mínimo 3 caracteres!' })
-  @IsString()
-  @IsOptional()
-  username: string;
+export class UpdateAppSettingsDto {
+  @IsBoolean({
+    message:
+      '*Salvar_Histórico_De_Imagem formato de dados inadequado para envio',
+  })
+  @IsNotEmpty({ message: '*Salvar_Histórico_De_Imagem não pode estar vazio' })
+  saveImageHistory: boolean;
 
-  @IsEmail({}, { message: 'Por favor introduza um Email válido!' })
-  @IsString({ message: 'O Email deve ser uma string!' })
-  @MaxLength(50, { message: 'O Email deve ter no máximo 50 caracteres!' })
-  @MinLength(12, { message: 'O Email deve ter no mínimo 12 caracteres!' })
-  @IsNotEmpty({ message: 'O Email deve pode estar vazio!' })
-  @IsOptional()
-  email: string;
+  @IsBoolean({
+    message:
+      '*Ativar_Alerta_De_Notificações, formato de dados inadequado para envio',
+  })
+  @IsNotEmpty({
+    message: '*Ativar_Alerta_De_Notificações não pode estar vazio',
+  })
+  enableNutricionalAlert: boolean;
 
-  @IsString({ message: 'A Password não pode ser Inválida!' })
-  @IsNotEmpty({ message: 'A Password não poder estar vazio!' })
-  @MaxLength(30, { message: 'A Password deve ter no máximo 30 caracteres!' })
-  @MinLength(8, { message: 'A Password deve ter no mínimo 8 caracteres!' })
-  @IsOptional()
-  password: string;
+  @IsBoolean({
+    message: '*Partilha_De_Dados, envio de formado de dados inadequado',
+  })
+  @IsNotEmpty({ message: '*Partilha_De_Dados não pode estar vazio' })
+  shareDataForTraining: boolean;
+
+  @IsBoolean({
+    message: '*Ativar_Notificações, formato de dados inadequado para envio',
+  })
+  @IsNotEmpty({ message: '*Ativar_Notificações não pode estar vazio' })
+  notificationEnabled: boolean;
+
+  @IsString({ message: '*thema deve ser um texto' })
+  @IsNotEmpty({ message: '*tema não pode estar vazio' })
+  theme: EnumTheme;
 }
