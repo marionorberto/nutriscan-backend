@@ -12,8 +12,8 @@ import {
   Req,
 } from '@nestjs/common';
 import { FoodItemsService } from './food-items.service';
-import { CreateUsersDto } from './dtos/create-feedbacks.dto';
-import { UpdateUsersDto } from './dtos/update-feedbacks.dto';
+import { CreateUsersDto } from './dtos/create-food-items.dto';
+import { UpdateUsersDto } from './dtos/update-food-items.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 

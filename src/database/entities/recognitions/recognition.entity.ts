@@ -5,6 +5,7 @@ import {
   UpdateDateColumn,
   CreateDateColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { FoodItems } from '../food-items/food-item.entity';
@@ -27,8 +28,8 @@ export class Recognitions {
   @ManyToOne(() => User, (users) => users.recognitions)
   user: User;
   // relation with food missing:
-  @ManyToOne(() => FoodItems, (fi) => fi.recognitions)
-  foodItem: FoodItems;
+  @OneToMany(() => FoodItems, (fi) => fi.recognitions)
+  foodItem: FoodItems[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;

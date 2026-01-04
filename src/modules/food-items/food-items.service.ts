@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateUsersDto } from './dtos/create-feedbacks.dto';
-import { UpdateUsersDto } from './dtos/update-feedbacks.dto';
+import { CreateUsersDto } from './dtos/create-food-items.dto';
+import { UpdateUsersDto } from './dtos/update-food-items.dto';
 import * as bcryptjs from 'bcryptjs';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';

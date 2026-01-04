@@ -5,7 +5,6 @@ import {
   UpdateDateColumn,
   CreateDateColumn,
   ManyToOne,
-  OneToMany,
 } from 'typeorm';
 import {
   EnumCategory,
@@ -57,11 +56,11 @@ export class FoodItems {
   @ManyToOne(() => User, (users) => users.foodItems)
   user: User;
 
-  @OneToMany(() => ReferenceImages, (ri) => ri.foodItem)
-  referenceImage: ReferenceImages[];
+  @ManyToOne(() => ReferenceImages, (ri) => ri.foodItem)
+  referenceImage: ReferenceImages;
 
-  @OneToMany(() => Recognitions, (ri) => ri.foodItem)
-  recognitions: Recognitions[];
+  @ManyToOne(() => Recognitions, (ri) => ri.foodItem)
+  recognitions: Recognitions;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;

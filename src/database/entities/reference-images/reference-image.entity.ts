@@ -4,7 +4,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   CreateDateColumn,
-  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { EnumImageType } from '../../../modules/reference-images/interfaces/interfaces';
 import { FoodItems } from '../food-items/food-item.entity';
@@ -21,8 +21,8 @@ export class ReferenceImages {
   filePath: string;
 
   // relation with *food missing:
-  @ManyToOne(() => FoodItems, (foodItems) => foodItems.referenceImage)
-  foodItem: FoodItems;
+  @OneToMany(() => FoodItems, (foodItems) => foodItems.referenceImage)
+  foodItem: FoodItems[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
