@@ -10,48 +10,63 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
   Req,
+  UploadedFile,
 } from '@nestjs/common';
-import { ReferenceImageService } from './reference-images.service';
-import { CreateUsersDto } from './dtos/create-reference-images.dto';
-import { UpdateUsersDto } from './dtos/update-reference-images.dto';
+import { ReferencedImageService } from './reference-images.service';
+import { UpdateReferencedImageDto } from './dtos/update-referenced-images.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadService } from 'shared/file-upload/file-upload.service';
+import { UploadPipe } from 'shared/file-upload/pipes/upload.pipe';
 
 @Controller('reference-images')
-export class ReferenceImageController {
-  constructor(private readonly usersServices: ReferenceImageService) {}
+export class ReferencedImageController {
+  constructor(
+    private readonly referencedImageService: ReferencedImageService,
+    private readonly fileUploadService: FileUploadService,
+  ) {}
 
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(request: Request) {
+    return await this.referencedImageService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('refereced-image/:id')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param('id') id: string, @Req() request: Request) {
+    return await this.referencedImageService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
+  @Post('create/refereced-image')
+  @UseInterceptors(FileInterceptor('file'))
+  create(
+    @UploadedFile(UploadPipe) file: Express.Multer.File,
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.referencedImageService.create(file, request);
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/refereced-image')
+  async updateOne(
+    @Param('id') id: string,
+    @Req() request: Request,
+    @Body() updateReferencedImageDto: UpdateReferencedImageDto,
+  ) {
+    return await this.referencedImageService.updateOne(
+      id,
+      request,
+      updateReferencedImageDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/refereced-image/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.referencedImageService.deleteOne(id, request);
   }
 }

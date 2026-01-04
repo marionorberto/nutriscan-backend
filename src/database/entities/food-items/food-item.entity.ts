@@ -11,7 +11,7 @@ import {
   EnumRecommendationLevel,
 } from '../../../modules/food-items/interfaces/interfaces';
 import { User } from '../users/user.entity';
-import { ReferenceImages } from '../reference-images/reference-image.entity';
+import { ReferencedImages } from '../reference-images/reference-image.entity';
 import { Recognitions } from '../recognitions/recognition.entity';
 
 @Entity('food_items')
@@ -56,8 +56,8 @@ export class FoodItems {
   @ManyToOne(() => User, (users) => users.foodItems)
   user: User;
 
-  @ManyToOne(() => ReferenceImages, (ri) => ri.foodItem)
-  referenceImage: ReferenceImages;
+  @ManyToOne(() => ReferencedImages, (ri) => ri.foodItem)
+  referenceImage: ReferencedImages;
 
   @ManyToOne(() => Recognitions, (ri) => ri.foodItem)
   recognitions: Recognitions;

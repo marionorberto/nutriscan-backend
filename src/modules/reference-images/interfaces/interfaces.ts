@@ -1,5 +1,6 @@
 export enum EnumImageType {
-  jpg = 'jpg',
-  png = 'png',
-  jpeg = 'jpeg',
+  jpeg = 'image/jpeg',
+  jpg = 'image/jpg',
+  png = 'image/png',
+  pdf = 'application/pdf',
 }

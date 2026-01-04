@@ -1,70 +1,52 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateUsersDto } from './dtos/create-reference-images.dto';
-import { UpdateUsersDto } from './dtos/update-reference-images.dto';
-import * as bcryptjs from 'bcryptjs';
+import { UpdateReferencedImageDto } from './dtos/update-referenced-images.dto';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
+import { ReferencedImages } from '@database/entities/reference-images/reference-image.entity';
+import { UsersService } from '@modules/users/users.service';
 @Injectable()
-export class ReferenceImageService {
+export class ReferencedImageService {
   private userRepository: Repository<User>;
+  private userService: UsersService;
+  private referencedImageRepo: Repository<ReferencedImages>;
   constructor(private readonly datasource: DataSource) {
     this.userRepository = this.datasource.getRepository(User);
+    this.referencedImageRepo = this.datasource.getRepository(ReferencedImages);
   }
-
-  async findAll() {
-    try {
-      return {
-        statusCode: 200,
-        method: 'GET',
-        message: 'Users fetched sucessfully.',
-        data: [],
-        path: '/users/all',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async findByPk(request: Request) {
+  async findAll(request: Request) {
     try {
       const { idUser } = request['user'];
 
-      const user = await this.userRepository.findOneBy({ id: idUser });
+      const user = await this.userService.checkUserIsAuthenticated(idUser);
 
-      if (!user)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Failure to fetch this user.',
-            path: '/users/user/:id',
-            timestamp: Date.now(),
+      if (user) {
+        const data = this.referencedImageRepo.findAndCount({
+          where: {
+            foodItem: {
+              user,
+            },
           },
-          HttpStatus.NOT_FOUND,
-        );
+        });
 
-      return {
-        statusCode: 200,
-        method: 'GET',
-        message: 'User fetched sucessfully.',
-        data: user,
-        path: '/users/user/:id',
-        timestamp: Date.now(),
-      };
+        return {
+          statusCode: 200,
+          method: 'GET',
+          message: 'registos encontradas com sucesso!',
+          data: data,
+          path: request.url,
+          timestamp: Date.now(),
+        };
+      }
     } catch (error) {
-      console.log(
-        `Failed to fetch this user. | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
-          statusCode: 404,
+          statusCode: 400,
           method: 'GET',
-          message: 'Failed to fetch this user.',
+          message:
+            'Não foi possível encontrar os dados das suas definições. Por favor tente novamente mais tarde!',
           error: error.message,
-          path: '/users/user/:id',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.NOT_FOUND,
@@ -72,39 +54,85 @@ export class ReferenceImageService {
     }
   }
 
-  async create(createUsersDto: CreateUsersDto) {
+  async findByPk(id: string, request: Request) {
     try {
-      const userToSave = this.userRepository.create(createUsersDto);
-      const userSaved = await this.userRepository.save(userToSave);
+      const { idUser } = request['user'];
 
-      const { id, username, email, createdAt } = userSaved;
+      const user = await this.userService.checkUserIsAuthenticated(idUser);
+
+      if (user) {
+        const data = this.referencedImageRepo.findOneBy({
+          id,
+        });
+
+        return {
+          statusCode: 200,
+          method: 'GET',
+          message: 'Registo encontrado com sucesso!',
+          data: data,
+          path: request.url,
+          timestamp: Date.now(),
+        };
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'GET',
+          message:
+            'Não foi possível atender a essa requisição no momento. Por favor tente novamente mais tarde!',
+          error: error.message,
+          path: request.url,
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  async create(file: Express.Multer.File, request: Request) {
+    try {
+      const { idUser } = request['user'];
+
+      const user = await this.userService.checkUserIsAuthenticated(idUser);
+
+      const referencedImageToSave = this.referencedImageRepo.create({
+        filename: file.filename,
+        filepath: file.path,
+        imageType: file.mimetype,
+      });
+
+      const referencedImageSaved = await this.referencedImageRepo.save({
+        ...referencedImageToSave,
+        user,
+      });
+
+      const { id, filename, filepath, imageType, foodItem, createdAt } =
+        referencedImageSaved;
 
       return {
         statusCode: 201,
         method: 'POST',
-        message: 'User created sucessfully',
+        message: 'Registo criado com sucesso!',
         data: {
           id,
-          username,
-          email,
-          password: createUsersDto.password,
+          filename,
+          filepath,
+          imageType,
+          foodItem,
           createdAt,
         },
-        path: '/users/create/user',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed  to create a new User | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falhou ao cadastrar usuário, ${error.message}`,
+          message: `Não foi possíve atender à essa requisição. Por favor tente novamente mais tarde!`,
           error: error.message,
-          path: '/users/create/user',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -112,49 +140,46 @@ export class ReferenceImageService {
     }
   }
 
-  async updateOne(request: Request, updateUsersDto: Partial<UpdateUsersDto>) {
+  async updateOne(
+    id: string,
+    request: Request,
+    updateAppSettingsDto: Partial<UpdateReferencedImageDto>,
+  ) {
     try {
-      const { idUser: id } = request['user'];
+      const { idUser } = request['user'];
 
-      if (updateUsersDto.password) {
-        const salt = await bcryptjs.genSalt(10);
-        updateUsersDto.password = await bcryptjs.hash(
-          updateUsersDto.password,
-          salt,
-        );
-      }
+      await this.userService.checkUserIsAuthenticated(idUser);
 
-      await this.userRepository.update(id, updateUsersDto);
+      await this.referencedImageRepo.update(id, updateAppSettingsDto);
 
-      const { username, email, createdAt, updatedAt } =
-        await this.userRepository.findOneBy({ id });
+      const { filename, filepath, imageType, foodItem, createdAt, updatedAt } =
+        await this.referencedImageRepo.findOneBy({ id });
 
       return {
         statusCode: 200,
         method: 'PUT',
-        message: 'User updated sucessfully',
+        message: 'Registo atualizado com sucesso!',
         data: {
           id,
-          username,
-          email,
+          filename,
+          filepath,
+          imageType,
+          foodItem,
           createdAt,
           updatedAt,
         },
-        path: '/users/update/user/:id',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed to update new User | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'PUT',
-          message: 'Não foi possível atualizar dados do usuário!',
+          message:
+            'Não foi possível atualizar dados, tente novamente mais tarde!',
           error: error.message,
-          path: '/users/update/user/:id',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -162,202 +187,45 @@ export class ReferenceImageService {
     }
   }
 
-  async deleteOne(id: string) {
+  async deleteOne(id: string, request: Request) {
     try {
-      const userToDelete = await this.userRepository.findOneBy({ id });
-      if (!userToDelete)
+      const { idUser } = request['user'];
+
+      await this.userService.checkUserIsAuthenticated(idUser);
+
+      const referencedImageToDelete = await this.referencedImageRepo.findOneBy({
+        id,
+      });
+
+      if (!referencedImageToDelete)
         throw new HttpException(
           {
             statusCode: 404,
             method: 'GET',
-            message: 'User Not Found',
-            path: '/users/user/:id',
+            message: 'Nenhuma registo encotrado.',
+            path: request.url,
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
         );
 
-      await this.userRepository.remove(userToDelete);
+      await this.referencedImageRepo.remove(referencedImageToDelete);
 
       return {
-        statusCode: 200,
+        statusCode: 201,
         method: 'DELETE',
-        message: 'User deleted sucessfully',
-        path: '/users/delete/user/:id',
+        message: 'Registo apagado com sucesso!',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(`Failed to delete User | Error Message: ${error.message}`);
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'DELETE',
-          message: 'Failed to delete User',
+          message: 'Não foi possível apagar o registo!',
           error: error.message,
-          path: '/users/delete/user/:id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async findOne(data: any) {
-    try {
-      const userFetched: User = await this.userRepository.findOne(data);
-
-      if (!userFetched.active) {
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário Desativado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      if (!userFetched)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário não encontrado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-
-      return {
-        id: userFetched.id,
-        username: userFetched.username,
-        password: userFetched.password,
-      };
-    } catch (error) {
-      console.log(`Failed to fetch User | Error Message: ${error.message}`);
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'POST',
-          message: error.message,
-          error: error.message,
-          path: '/users/user/id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async lastUsersRegistered() {
-    try {
-      const [lastTwoDoctors] = await Promise.all([
-        this.userRepository.find({
-          order: { createdAt: 'DESC' },
-          take: 2,
-        }),
-      ]);
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          lastTwoDoctors,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async ban(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: false,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async active(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: true,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' activado sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

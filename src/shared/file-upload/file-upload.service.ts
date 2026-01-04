@@ -56,7 +56,7 @@ export class FileUploadService {
         statusCode: 201,
         method: 'POST',
         message: 'File Uploaded sucessfully',
-        filePath: file.path,
+        filepath: file.path,
         filename: file.filename,
         path: '/uploads',
         timestamp: Date.now(),
