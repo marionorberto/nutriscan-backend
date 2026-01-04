@@ -1,70 +1,52 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateUsersDto } from './dtos/create-physical-activity-level.dto';
-import { UpdateUsersDto } from './dtos/update-physical-activity-level.dto';
-import * as bcryptjs from 'bcryptjs';
+import { CreateClinicalProfileDto } from './dtos/create-clinical-profiles.dto';
+import { UpdateClinicalProfileDto } from './dtos/update-clinical-profiles.dto';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
+import { ClinicalProfiles } from '@database/entities/clinical-profiles/clinical-profile.entity';
+import { UsersService } from '@modules/users/users.service';
 @Injectable()
 export class ClinicalProfilesService {
   private userRepository: Repository<User>;
+  private clinicalProfileRepo: Repository<ClinicalProfiles>;
+  private readonly userService: UsersService;
   constructor(private readonly datasource: DataSource) {
     this.userRepository = this.datasource.getRepository(User);
+    this.clinicalProfileRepo = this.datasource.getRepository(ClinicalProfiles);
   }
 
-  async findAll() {
-    try {
-      return {
-        statusCode: 200,
-        method: 'GET',
-        message: 'Users fetched sucessfully.',
-        data: [],
-        path: '/users/all',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async findByPk(request: Request) {
+  async findOne(request: Request) {
     try {
       const { idUser } = request['user'];
 
-      const user = await this.userRepository.findOneBy({ id: idUser });
+      const user = await this.userService.checkUserIsAuthenticated(idUser);
 
-      if (!user)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Failure to fetch this user.',
-            path: '/users/user/:id',
-            timestamp: Date.now(),
+      if (user) {
+        const data = this.clinicalProfileRepo.findAndCount({
+          where: {
+            user,
           },
-          HttpStatus.NOT_FOUND,
-        );
+        });
 
-      return {
-        statusCode: 200,
-        method: 'GET',
-        message: 'User fetched sucessfully.',
-        data: user,
-        path: '/users/user/:id',
-        timestamp: Date.now(),
-      };
+        return {
+          statusCode: 200,
+          method: 'GET',
+          message: 'Dados de perfil clínico encontradas com sucesso!',
+          data: data,
+          path: '/clinical-profiles/all',
+          timestamp: Date.now(),
+        };
+      }
     } catch (error) {
-      console.log(
-        `Failed to fetch this user. | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
-          statusCode: 404,
+          statusCode: 400,
           method: 'GET',
-          message: 'Failed to fetch this user.',
+          message:
+            'Não foi possível encontrar os dados das suas dados de perfil clínico. Por favor tente novamente mais tarde!',
           error: error.message,
-          path: '/users/user/:id',
+          path: '/app-clinical-profiles/all',
           timestamp: Date.now(),
         },
         HttpStatus.NOT_FOUND,
@@ -72,39 +54,58 @@ export class ClinicalProfilesService {
     }
   }
 
-  async create(createUsersDto: CreateUsersDto) {
+  async create(
+    request: Request,
+    createClinicalProfileDto: CreateClinicalProfileDto,
+  ) {
     try {
-      const userToSave = this.userRepository.create(createUsersDto);
-      const userSaved = await this.userRepository.save(userToSave);
+      const { idUser } = request['user'];
 
-      const { id, username, email, createdAt } = userSaved;
+      const user = await this.userService.checkUserIsAuthenticated(idUser);
+
+      const clinicalProfileToSave = this.clinicalProfileRepo.create({
+        ...createClinicalProfileDto,
+      });
+
+      const clinicalProfileSaved = await this.clinicalProfileRepo.save({
+        ...clinicalProfileToSave,
+        user,
+      });
+
+      const {
+        id,
+        weight,
+        height,
+        physicalActivityLevel,
+        bmi,
+        active,
+        createdAt,
+      } = clinicalProfileSaved;
 
       return {
         statusCode: 201,
         method: 'POST',
-        message: 'User created sucessfully',
+        message: 'Dados Clínicos criadas com sucesso!',
         data: {
           id,
-          username,
-          email,
-          password: createUsersDto.password,
+          weight,
+          height,
+          physicalActivityLevel,
+          bmi,
+          active,
           createdAt,
         },
-        path: '/users/create/user',
+        path: '/clinical-profiles/create/clinical-profile',
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed  to create a new User | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falhou ao cadastrar usuário, ${error.message}`,
+          message: `Não foi possíve atender à essa requisição. Por favor tente novamente mais tarde!`,
           error: error.message,
-          path: '/users/create/user',
+          path: '/clinical-profiles/create/clinical-profile',
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -112,49 +113,54 @@ export class ClinicalProfilesService {
     }
   }
 
-  async updateOne(request: Request, updateUsersDto: Partial<UpdateUsersDto>) {
+  async updateOne(
+    id: string,
+    request: Request,
+    updateClinicalProfileDto: Partial<UpdateClinicalProfileDto>,
+  ) {
     try {
-      const { idUser: id } = request['user'];
+      const { idUser } = request['user'];
 
-      if (updateUsersDto.password) {
-        const salt = await bcryptjs.genSalt(10);
-        updateUsersDto.password = await bcryptjs.hash(
-          updateUsersDto.password,
-          salt,
-        );
-      }
+      await this.userService.checkUserIsAuthenticated(idUser);
 
-      await this.userRepository.update(id, updateUsersDto);
+      await this.clinicalProfileRepo.update(id, updateClinicalProfileDto);
 
-      const { username, email, createdAt, updatedAt } =
-        await this.userRepository.findOneBy({ id });
+      const {
+        height,
+        weight,
+        bmi,
+        physicalActivityLevel,
+        active,
+        createdAt,
+        updatedAt,
+      } = await this.clinicalProfileRepo.findOneBy({ id });
 
       return {
         statusCode: 200,
         method: 'PUT',
-        message: 'User updated sucessfully',
+        message: 'Dados Clínicos atualizadas com sucesso!',
         data: {
           id,
-          username,
-          email,
+          height,
+          weight,
+          bmi,
+          physicalActivityLevel,
+          active,
           createdAt,
           updatedAt,
         },
-        path: '/users/update/user/:id',
+        path: '/clinical-profiles/update/clinical-profile/' + id,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed to update new User | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'PUT',
-          message: 'Não foi possível atualizar dados do usuário!',
+          message:
+            'Não foi possível atualizar dados, tente novamente mais tarde!',
           error: error.message,
-          path: '/users/update/user/:id',
+          path: '/clinical-profiles/update/clinical-profile/' + id,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -162,202 +168,45 @@ export class ClinicalProfilesService {
     }
   }
 
-  async deleteOne(id: string) {
+  async deleteOne(id: string, request: Request) {
     try {
-      const userToDelete = await this.userRepository.findOneBy({ id });
-      if (!userToDelete)
+      const { idUser } = request['user'];
+
+      await this.userService.checkUserIsAuthenticated(idUser);
+
+      const clinicalProfileToDelete = await this.clinicalProfileRepo.findOneBy({
+        id,
+      });
+
+      if (!clinicalProfileToDelete)
         throw new HttpException(
           {
             statusCode: 404,
             method: 'GET',
-            message: 'User Not Found',
-            path: '/users/user/:id',
+            message: 'Nenhuma dados de configuração encontrada.',
+            path: '/app-clinical-profiles/app-clinical-profile/' + id,
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
         );
 
-      await this.userRepository.remove(userToDelete);
+      await this.clinicalProfileRepo.remove(clinicalProfileToDelete);
 
       return {
         statusCode: 200,
         method: 'DELETE',
-        message: 'User deleted sucessfully',
-        path: '/users/delete/user/:id',
+        message: 'Seus Dados Clínicos foram apagadas com sucesso!',
+        path: '/app-clinical-profiles/delete/setting/:id',
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(`Failed to delete User | Error Message: ${error.message}`);
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'DELETE',
-          message: 'Failed to delete User',
+          message: 'Dados de perfil clínico foram apagadas com sucesso!',
           error: error.message,
-          path: '/users/delete/user/:id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async findOne(data: any) {
-    try {
-      const userFetched: User = await this.userRepository.findOne(data);
-
-      if (!userFetched.active) {
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário Desativado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      if (!userFetched)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário não encontrado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-
-      return {
-        id: userFetched.id,
-        username: userFetched.username,
-        password: userFetched.password,
-      };
-    } catch (error) {
-      console.log(`Failed to fetch User | Error Message: ${error.message}`);
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'POST',
-          message: error.message,
-          error: error.message,
-          path: '/users/user/id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async lastUsersRegistered() {
-    try {
-      const [lastTwoDoctors] = await Promise.all([
-        this.userRepository.find({
-          order: { createdAt: 'DESC' },
-          take: 2,
-        }),
-      ]);
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          lastTwoDoctors,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async ban(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: false,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async active(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: true,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' activado sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
+          path: '/app-clinical-profiles/app-clinical-profile/' + id,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

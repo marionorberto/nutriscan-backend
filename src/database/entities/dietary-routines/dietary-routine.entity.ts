@@ -24,7 +24,7 @@ export class DietaryRoutines {
   @Column({ name: 'foods_to_avoid', type: 'json', nullable: false })
   foodsToAvoid: string;
 
-  @Column({ name: 'meal_schedules', type: 'json', nullable: false })
+  @Column({ name: 'meal_schedules', type: 'json', nullable: true })
   mealSchedules: string;
 
   @Column({

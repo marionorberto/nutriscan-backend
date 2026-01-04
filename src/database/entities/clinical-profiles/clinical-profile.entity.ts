@@ -22,7 +22,7 @@ export class ClinicalProfiles {
   height: number;
 
   @Column({ name: 'bmi', type: 'decimal', nullable: false })
-  bmi: string;
+  bmi: number;
 
   @Column({
     name: 'physical_activity_level',

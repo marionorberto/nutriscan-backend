@@ -12,46 +12,52 @@ import {
   Req,
 } from '@nestjs/common';
 import { ClinicalProfilesService } from './clinical-profiles.service';
-import { CreateUsersDto } from './dtos/create-physical-activity-level.dto';
-import { UpdateUsersDto } from './dtos/update-physical-activity-level.dto';
+import { CreateClinicalProfileDto } from './dtos/create-clinical-profiles.dto';
+import { UpdateClinicalProfileDto } from './dtos/update-clinical-profiles.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
-@Controller('users')
-export class UsersController {
-  constructor(private readonly usersServices: ClinicalProfilesService) {}
+@Controller('clinical-profiles')
+export class ClinicalProfileController {
+  constructor(
+    private readonly clinicalProfileService: ClinicalProfilesService,
+  ) {}
 
   @UseGuards(AuthGuard)
-  @Get('all')
+  @Get('clinical-profile/:id')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findOne(@Req() request: Request) {
+    return await this.clinicalProfileService.findOne(request);
   }
 
-  @UseGuards(AuthGuard)
-  @Get('user')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
-  }
-
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
+  @Post('create/clinical-profile')
+  create(
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+    @Body() createClinicalProfileDto: CreateClinicalProfileDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.clinicalProfileService.create(
+      request,
+      createClinicalProfileDto,
+    );
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/clinical-profile')
+  async updateOne(
+    @Param() id: string,
+    @Req() request: Request,
+    @Body() updateClinicalProfileDto: UpdateClinicalProfileDto,
+  ) {
+    return await this.clinicalProfileService.updateOne(
+      id,
+      request,
+      updateClinicalProfileDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/clinical-profile/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.clinicalProfileService.deleteOne(id, request);
   }
 }

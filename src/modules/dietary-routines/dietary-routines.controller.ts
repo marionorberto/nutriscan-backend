@@ -12,46 +12,47 @@ import {
   Req,
 } from '@nestjs/common';
 import { DietaryRoutineService } from './dietary-routines.service';
-import { CreateUsersDto } from './dtos/create-physical-activity-level.dto';
-import { UpdateUsersDto } from './dtos/update-physical-activity-level.dto';
+import { CreateDietaryRoutineDto } from './dtos/create-dietary-routines.dto';
+import { UpdateDietaryRoutineDto } from './dtos/update-dietary-routines.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('dietary-routines')
 export class DietaryRoutineController {
-  constructor(private readonly usersServices: DietaryRoutineService) {}
+  constructor(private readonly dietaryRoutineService: DietaryRoutineService) {}
 
   @UseGuards(AuthGuard)
-  @Get('all')
+  @Get('dietary-routine/')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findOne(@Req() request: Request) {
+    return await this.dietaryRoutineService.findOne(request);
   }
 
-  @UseGuards(AuthGuard)
-  @Get('user')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
-  }
-
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
+  @Post('create/dietary-routine')
+  create(
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+    @Body() createDietaryRoutineDto: CreateDietaryRoutineDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.dietaryRoutineService.create(request, createDietaryRoutineDto);
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/dietary-routine')
+  async updateOne(
+    @Param() id: string,
+    @Req() request: Request,
+    @Body() updateDietaryRoutineDto: UpdateDietaryRoutineDto,
+  ) {
+    return await this.dietaryRoutineService.updateOne(
+      id,
+      request,
+      updateDietaryRoutineDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/dietary-routine/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.dietaryRoutineService.deleteOne(id, request);
   }
 }
