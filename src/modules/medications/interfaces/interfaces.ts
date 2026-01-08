@@ -1,6 +1,7 @@
-export enum EnumMedicationType {
-  comprimido = 'COMPRIMIDO',
-  liquido = 'LIQUIDO',
-  injecao = 'INJECAO',
-  outro = 'OUTRO',
+export enum EnumCategoryMedicationForm {
+  TABLET = 'Comprimido',
+  SYRUP = 'Xarope',
+  CAPSULE = 'Cápsula',
+  INJECTION = 'Injeção',
+  OTHER = 'Outro',
 }

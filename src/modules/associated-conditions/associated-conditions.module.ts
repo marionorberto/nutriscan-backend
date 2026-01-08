@@ -4,10 +4,11 @@ import { AssociatedConditionsController } from './associated-conditions.controll
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AssociatedConditions } from '../../database/entities/associated-conditions/associated-condition.entity';
 import { UsersService } from '@modules/users/users.service';
+import { EmailService } from 'shared/email/email.service';
 @Module({
   imports: [TypeOrmModule.forFeature([AssociatedConditions])],
   controllers: [AssociatedConditionsController],
-  providers: [AssociatedConditionsService, UsersService],
-  exports: [AssociatedConditionsService, UsersService],
+  providers: [AssociatedConditionsService, UsersService, EmailService],
+  exports: [AssociatedConditionsService, UsersService, EmailService],
 })
 export class AssociatedConditionsModule {}

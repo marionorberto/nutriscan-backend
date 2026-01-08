@@ -12,46 +12,53 @@ import {
   Req,
 } from '@nestjs/common';
 import { RecognitionService } from './recognitions.service';
-import { CreateUsersDto } from './dtos/create-recognitions.dto';
-import { UpdateUsersDto } from './dtos/update-recognitions.dto';
+import { CreateRecognitionDto } from './dtos/create-recognitions.dto';
+import { UpdateRecognitionDto } from './dtos/update-recognitions.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('users')
 export class RecognitionController {
-  constructor(private readonly usersServices: RecognitionService) {}
-
+  constructor(private readonly recognitionService: RecognitionService) {}
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(@Req() request: Request) {
+    return await this.recognitionService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('recognition')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param() id: string, @Req() request: Request) {
+    return await this.recognitionService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
-    @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+  @Post('create/recognition')
+  create(
+    @Param() request: Request,
+    @Body() createRecognitionDto: CreateRecognitionDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.recognitionService.create(request, createRecognitionDto);
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/recognition')
+  async updateOne(
+    @Param() id: string,
+    @Req() request: Request,
+    @Body() updateRecognitionDto: UpdateRecognitionDto,
+  ) {
+    return await this.recognitionService.updateOne(
+      id,
+      request,
+      updateRecognitionDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/recognition/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.recognitionService.deleteOne(id, request);
   }
 }

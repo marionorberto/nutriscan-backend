@@ -1,70 +1,62 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateUsersDto } from './dtos/create-physical-activity-level.dto';
-import { UpdateUsersDto } from './dtos/update-physical-activity-level.dto';
-import * as bcryptjs from 'bcryptjs';
+import { CreateGoalDto } from './dtos/create-goals.dto';
+import { UpdateGoalDto } from './dtos/update-goals.dto';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
+import { Goals } from '@database/entities/goals/goal.entity';
+import { UsersService } from '@modules/users/users.service';
 @Injectable()
 export class GoalsService {
   private userRepository: Repository<User>;
+  private readonly userService: UsersService;
+  private goalRepo: Repository<Goals>;
   constructor(private readonly datasource: DataSource) {
     this.userRepository = this.datasource.getRepository(User);
+    this.goalRepo = this.datasource.getRepository(Goals);
   }
-
-  async findAll() {
-    try {
-      return {
-        statusCode: 200,
-        method: 'GET',
-        message: 'Users fetched sucessfully.',
-        data: [],
-        path: '/users/all',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async findByPk(request: Request) {
+  async findAll(request: Request) {
     try {
       const { idUser } = request['user'];
 
-      const user = await this.userRepository.findOneBy({ id: idUser });
+      const { data } = await this.userService.findById(idUser);
 
-      if (!user)
+      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
+
+      if (!isAdminUserAction)
         throw new HttpException(
           {
             statusCode: 404,
             method: 'GET',
-            message: 'Failure to fetch this user.',
+            message: 'User do not have suficcient permission',
             path: '/users/user/:id',
             timestamp: Date.now(),
           },
-          HttpStatus.NOT_FOUND,
+          HttpStatus.FORBIDDEN,
         );
+
+      const goals = await this.goalRepo.findAndCount();
 
       return {
         statusCode: 200,
         method: 'GET',
-        message: 'User fetched sucessfully.',
-        data: user,
-        path: '/users/user/:id',
+        message: 'goals fetched sucessfully.',
+        data: goals,
+        path: '/goals/all',
         timestamp: Date.now(),
       };
     } catch (error) {
       console.log(
-        `Failed to fetch this user. | Error Message: ${error.message}`,
+        `Failed to fetch this goals. | Error Message: ${error.message}`,
       );
 
       throw new HttpException(
         {
           statusCode: 404,
           method: 'GET',
-          message: 'Failed to fetch this user.',
+          message: 'Failed to fetch this goal.',
           error: error.message,
-          path: '/users/user/:id',
+          path: '/goals/goal/:id',
           timestamp: Date.now(),
         },
         HttpStatus.NOT_FOUND,
@@ -72,39 +64,81 @@ export class GoalsService {
     }
   }
 
-  async create(createUsersDto: CreateUsersDto) {
+  async findByPk(id: string, request: Request) {
     try {
-      const userToSave = this.userRepository.create(createUsersDto);
-      const userSaved = await this.userRepository.save(userToSave);
+      const { idUser } = request['user'];
 
-      const { id, username, email, createdAt } = userSaved;
+      this.userService.checkUserIsAuthenticated(idUser);
+
+      const goal = this.goalRepo.findOneBy({ id });
+
+      return {
+        statusCode: 200,
+        method: 'GET',
+        message: 'goal fetched sucessfully.',
+        data: goal,
+        path: '/goals/goal/:id',
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.log(
+        `Failed to fetch this goal. | Error Message: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          statusCode: 404,
+          method: 'GET',
+          message: 'Failed to fetch this goal.',
+          error: error.message,
+          path: '/goals/goal/:id',
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  async create(request: Request, createGoalDto: CreateGoalDto) {
+    try {
+      const { idUser } = request['user'];
+
+      this.userService.checkUserIsAuthenticated(idUser);
+
+      const goalToSave = this.goalRepo.create(createGoalDto);
+      const goalsaved = await this.goalRepo.save(goalToSave);
+
+      const {
+        id,
+        nutricionalGoal,
+        targetFastingGlucose,
+        targetWeight,
+        createdAt,
+      } = goalsaved;
 
       return {
         statusCode: 201,
         method: 'POST',
-        message: 'User created sucessfully',
+        message: 'Registo criado com sucesso!',
         data: {
           id,
-          username,
-          email,
-          password: createUsersDto.password,
+          nutricionalGoal,
+          targetFastingGlucose,
+          targetWeight,
           createdAt,
         },
-        path: '/users/create/user',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed  to create a new User | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falhou ao cadastrar usuário, ${error.message}`,
+          message:
+            'Não foi possível atender a essa requisição. Tente novamente mais tarde!',
           error: error.message,
-          path: '/users/create/user',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -112,49 +146,50 @@ export class GoalsService {
     }
   }
 
-  async updateOne(request: Request, updateUsersDto: Partial<UpdateUsersDto>) {
+  async updateOne(
+    id: string,
+    request: Request,
+    updateGoalDto: Partial<UpdateGoalDto>,
+  ) {
     try {
-      const { idUser: id } = request['user'];
+      const { idUser } = request['user'];
 
-      if (updateUsersDto.password) {
-        const salt = await bcryptjs.genSalt(10);
-        updateUsersDto.password = await bcryptjs.hash(
-          updateUsersDto.password,
-          salt,
-        );
-      }
+      this.userService.checkUserIsAuthenticated(idUser);
 
-      await this.userRepository.update(id, updateUsersDto);
+      await this.goalRepo.update(id, updateGoalDto);
 
-      const { username, email, createdAt, updatedAt } =
-        await this.userRepository.findOneBy({ id });
+      const {
+        nutricionalGoal,
+        targetFastingGlucose,
+        targetWeight,
+        createdAt,
+        updatedAt,
+      } = await this.goalRepo.findOneBy({ id });
 
       return {
         statusCode: 200,
         method: 'PUT',
-        message: 'User updated sucessfully',
+        message: 'Registo atualizado com sucesso!',
         data: {
           id,
-          username,
-          email,
+          nutricionalGoal,
+          targetFastingGlucose,
+          targetWeight,
           createdAt,
           updatedAt,
         },
-        path: '/users/update/user/:id',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed to update new User | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'PUT',
-          message: 'Não foi possível atualizar dados do usuário!',
+          message:
+            'Não foi possível atualizar registo. Tente novamente mais tarde!',
           error: error.message,
-          path: '/users/update/user/:id',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -162,202 +197,43 @@ export class GoalsService {
     }
   }
 
-  async deleteOne(id: string) {
+  async deleteOne(id: string, request: Request) {
     try {
-      const userToDelete = await this.userRepository.findOneBy({ id });
-      if (!userToDelete)
+      const { idUser } = request['user'];
+
+      await this.userService.checkUserIsAuthenticated(idUser);
+
+      const goalToDelete = await this.goalRepo.findOneBy({ id });
+
+      if (!goalToDelete)
         throw new HttpException(
           {
             statusCode: 404,
             method: 'GET',
-            message: 'User Not Found',
-            path: '/users/user/:id',
+            message: 'goal Not Found',
+            path: '/goals/goal/:id',
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
         );
 
-      await this.userRepository.remove(userToDelete);
+      await this.goalRepo.remove(goalToDelete);
 
       return {
         statusCode: 200,
         method: 'DELETE',
-        message: 'User deleted sucessfully',
-        path: '/users/delete/user/:id',
+        message: 'Registo apagado com sucesso',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(`Failed to delete User | Error Message: ${error.message}`);
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'DELETE',
-          message: 'Failed to delete User',
+          message: 'Não foi possível apagar esse registo',
           error: error.message,
-          path: '/users/delete/user/:id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async findOne(data: any) {
-    try {
-      const userFetched: User = await this.userRepository.findOne(data);
-
-      if (!userFetched.active) {
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário Desativado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-      if (!userFetched)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Usuário não encontrado.',
-            path: '/users/user/id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.NOT_FOUND,
-        );
-
-      return {
-        id: userFetched.id,
-        username: userFetched.username,
-        password: userFetched.password,
-      };
-    } catch (error) {
-      console.log(`Failed to fetch User | Error Message: ${error.message}`);
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'POST',
-          message: error.message,
-          error: error.message,
-          path: '/users/user/id',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async lastUsersRegistered() {
-    try {
-      const [lastTwoDoctors] = await Promise.all([
-        this.userRepository.find({
-          order: { createdAt: 'DESC' },
-          take: 2,
-        }),
-      ]);
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          lastTwoDoctors,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async ban(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: false,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' fetched sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
-          timestamp: Date.now(),
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  async active(id: string) {
-    try {
-      console.log('oieee', id);
-      const bannedUser = this.userRepository.update(id, {
-        active: true,
-      });
-
-      return {
-        statusCode: 200,
-        method: 'PUT',
-        message: ' activado sucessfully',
-        data: {
-          banned: true,
-          bannedUser,
-        },
-        path: '/users/lastusers',
-        timestamp: Date.now(),
-      };
-    } catch (error) {
-      console.log(
-        `Failed to lastUsersRegistered| Error Message: ${error.message}`,
-      );
-
-      throw new HttpException(
-        {
-          statusCode: 400,
-          method: 'PUT',
-          message: 'Failed to update Password',
-          error: error.message,
-          path: '/users/password/user/update',
+          path: request.originalUrl,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

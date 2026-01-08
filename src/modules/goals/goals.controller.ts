@@ -12,46 +12,46 @@ import {
   Req,
 } from '@nestjs/common';
 import { GoalsService } from './goals.service';
-import { CreateUsersDto } from './dtos/create-physical-activity-level.dto';
-import { UpdateUsersDto } from './dtos/update-physical-activity-level.dto';
+import { CreateGoalDto } from './dtos/create-goals.dto';
+import { UpdateGoalDto } from './dtos/update-goals.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('goals')
 export class GoalsController {
-  constructor(private readonly usersServices: GoalsService) {}
-
+  constructor(private readonly goalsService: GoalsService) {}
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(@Req() request: Request) {
+    return await this.goalsService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('goal')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param() id: string, @Req() request: Request) {
+    return await this.goalsService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
+  @Post('create/goal')
+  create(@Param() request: Request, @Body() createGoalDto: CreateGoalDto) {
+    return this.goalsService.create(request, createGoalDto);
   }
 
   @UseGuards(AuthGuard)
-  @Put('update/user')
+  @Put('update/goal')
   async updateOne(
+    @Param() id: string,
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+    @Body() updateGoalDto: UpdateGoalDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return await this.goalsService.updateOne(id, request, updateGoalDto);
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Delete('delete/goal/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.goalsService.deleteOne(id, request);
   }
 }

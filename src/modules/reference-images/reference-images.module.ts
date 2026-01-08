@@ -4,10 +4,22 @@ import { ReferencedImageController } from './reference-images.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReferencedImages } from '../../database/entities/reference-images/reference-image.entity';
 import { UsersService } from '@modules/users/users.service';
+import { EmailService } from 'shared/email/email.service';
+import { FileUploadService } from 'shared/file-upload/file-upload.service';
 @Module({
   imports: [TypeOrmModule.forFeature([ReferencedImages])],
   controllers: [ReferencedImageController],
-  providers: [ReferencedImageService, UsersService],
-  exports: [ReferencedImageService, UsersService],
+  providers: [
+    ReferencedImageService,
+    UsersService,
+    EmailService,
+    FileUploadService,
+  ],
+  exports: [
+    ReferencedImageService,
+    UsersService,
+    EmailService,
+    FileUploadService,
+  ],
 })
 export class ReferenceImageModule {}

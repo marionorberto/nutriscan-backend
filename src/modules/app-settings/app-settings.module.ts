@@ -4,10 +4,11 @@ import { AppSettingsController } from './app-settings.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppSettings } from '../../database/entities/app-settings/app-setting.entity';
 import { UsersService } from '@modules/users/users.service';
+import { EmailService } from 'shared/email/email.service';
 @Module({
   imports: [TypeOrmModule.forFeature([AppSettings])],
   controllers: [AppSettingsController],
-  providers: [AppSettingsService, UsersService],
-  exports: [AppSettingsService, UsersService],
+  providers: [AppSettingsService, UsersService, EmailService],
+  exports: [AppSettingsService, UsersService, EmailService],
 })
 export class AppSettingsModule {}

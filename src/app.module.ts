@@ -26,6 +26,8 @@ import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { AllergiesModule } from './modules/allergies/allergies.module';
 import { VisionModule } from './modules/vision/vision.module';
 import { EmailModule } from 'shared/email/email.module';
+import { MedicationSchedule } from '@database/entities/medication-schedules/medication-schedules.entity';
+import { FoodDataModule } from '@modules/food-data/food-data.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -69,6 +71,8 @@ import { EmailModule } from 'shared/email/email.module';
     AppSettingsModule,
     VisionModule,
     EmailModule,
+    MedicationSchedule,
+    FoodDataModule,
   ],
   controllers: [AppController],
   providers: [

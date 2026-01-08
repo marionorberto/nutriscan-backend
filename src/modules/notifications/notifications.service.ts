@@ -1,22 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateNotificationsDto } from './dtos/create-notifications.dto';
-import { Repository } from 'typeorm';
-import { User } from '@database/entities/users/user.entity';
+import { DataSource, Repository } from 'typeorm';
 import { Request } from 'express';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Notifications } from '@database/entities/notifications/notification.entity';
 import { UsersService } from '@modules/users/users.service';
 import { EnumCategory, EnumNotificationCreator } from './interfaces/interfaces';
 import { UpdateNotificationsDto } from './dtos/update-notifications.dto';
 @Injectable()
 export class NotificationService {
-  constructor(
-    @InjectRepository(Notifications)
-    private readonly notificationsRepository: Repository<Notifications>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly userServices: UsersService,
-  ) {}
+  private readonly notificationsRepository: Repository<Notifications>;
+  private readonly userServices: UsersService;
+  constructor(private readonly datasource: DataSource) {
+    this.notificationsRepository = this.datasource.getRepository(Notifications);
+  }
 
   async findNotificationCreatedByAdmin(request: Request) {
     try {

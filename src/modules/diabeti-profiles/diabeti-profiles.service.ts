@@ -6,6 +6,11 @@ import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
 import { UsersService } from '@modules/users/users.service';
 import { DiabeteProfiles } from '@database/entities/diabeti-profiles/diabeti_profile.entity';
+import {
+  ClinicalEvaluation,
+  ClinicalProfile,
+  FoodClinicalInput,
+} from './interfaces/interfaces';
 @Injectable()
 export class DiabeteProfilesService {
   private userRepo: Repository<User>;
@@ -207,5 +212,55 @@ export class DiabeteProfilesService {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  evaluateFood(
+    food: FoodClinicalInput,
+    profile: ClinicalProfile,
+  ): ClinicalEvaluation {
+    const alerts: string[] = [];
+
+    let risk: ClinicalEvaluation['riskLevel'] = 'LOW';
+    let glycemicImpact: ClinicalEvaluation['glycemicImpact'] = 'LOW';
+
+    // Regra 1 — Açúcar alto
+    if (food.sugar > 10) {
+      risk = 'HIGH';
+      glycemicImpact = 'HIGH';
+      alerts.push('High sugar content');
+    }
+
+    // Regra 2 — Carboidrato elevado
+    if (food.carbs > 30) {
+      risk = risk === 'HIGH' ? 'HIGH' : 'MODERATE';
+      glycemicImpact = 'MEDIUM';
+      alerts.push('High carbohydrate load');
+    }
+
+    // Regra 3 — Índice glicêmico
+    if (food.glycemicIndex && food.glycemicIndex > 70) {
+      risk = 'HIGH';
+      glycemicImpact = 'HIGH';
+      alerts.push('High glycemic index');
+    }
+
+    // Regra 4 — Perfil diabético
+    if (profile.diabetesType === 'TYPE_2' && risk !== 'LOW') {
+      alerts.push('Not recommended for Type 2 diabetes');
+    }
+
+    return {
+      food: food.name,
+      riskLevel: risk,
+      glycemicImpact,
+      alerts,
+    };
+  }
+
+  evaluateMeal(
+    foods: FoodClinicalInput[],
+    profile: ClinicalProfile,
+  ): ClinicalEvaluation[] {
+    return foods.map((food) => this.evaluateFood(food, profile));
   }
 }

@@ -12,46 +12,53 @@ import {
   Req,
 } from '@nestjs/common';
 import { MedicationService } from './medications.service';
-import { CreateUsersDto } from './dtos/create-medications.dto';
-import { UpdateUsersDto } from './dtos/update-medications.dto';
+import { CreateMedicationDto } from './dtos/create-medications.dto';
+import { UpdateMedicationDto } from './dtos/update-medications.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('medications')
 export class MedicationController {
-  constructor(private readonly usersServices: MedicationService) {}
-
+  constructor(private readonly medicationService: MedicationService) {}
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(@Req() request: Request) {
+    return await this.medicationService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('medication')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param() id: string, @Req() request: Request) {
+    return await this.medicationService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
-    @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+  @Post('create/medication')
+  create(
+    @Param() request: Request,
+    @Body() createMedicationDto: CreateMedicationDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.medicationService.create(request, createMedicationDto);
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/medication')
+  async updateOne(
+    @Param() id: string,
+    @Req() request: Request,
+    @Body() updateMedicationDto: UpdateMedicationDto,
+  ) {
+    return await this.medicationService.updateOne(
+      id,
+      request,
+      updateMedicationDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/medication/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.medicationService.deleteOne(id, request);
   }
 }

@@ -12,46 +12,59 @@ import {
   Req,
 } from '@nestjs/common';
 import { FoodRecomendationsService } from './food-recomendations.service';
-import { CreateUsersDto } from './dtos/create-physical-activity-level.dto';
-import { UpdateUsersDto } from './dtos/update-physical-activity-level.dto';
+import { CreateFoodRecomendationDto } from './dtos/create-food-recomendations.dto';
+import { UpdateFoodRecomendationDto } from './dtos/update-food-recomendations.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
 @Controller('food-recommendations')
 export class FoodRecomendationsController {
-  constructor(private readonly usersServices: FoodRecomendationsService) {}
+  constructor(
+    private readonly foodRecomendationsService: FoodRecomendationsService,
+  ) {}
 
   @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll() {
-    return await this.usersServices.findAll();
+  async findAll(@Req() request: Request) {
+    return await this.foodRecomendationsService.findAll(request);
   }
 
   @UseGuards(AuthGuard)
-  @Get('user')
+  @Get('food-recomendation')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Req() request: Request) {
-    return await this.usersServices.findByPk(request);
+  async findByPk(@Param() id: string, @Req() request: Request) {
+    return await this.foodRecomendationsService.findByPk(id, request);
   }
 
-  @Post('create/user')
-  create(@Body() createUserDto: CreateUsersDto) {
-    return this.usersServices.create(createUserDto);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('update/user')
-  async updateOne(
-    @Req() request: Request,
-    @Body() updateUsersDto: UpdateUsersDto,
+  @Post('create/food-recomendation')
+  create(
+    @Param() request: Request,
+    @Body() createFoodRecomendationDto: CreateFoodRecomendationDto,
   ) {
-    return await this.usersServices.updateOne(request, updateUsersDto);
+    return this.foodRecomendationsService.create(
+      request,
+      createFoodRecomendationDto,
+    );
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/user/:id')
-  async deleteOne(@Param('id') id: string) {
-    return await this.usersServices.deleteOne(id);
+  @Put('update/food-recomendation')
+  async updateOne(
+    @Param() id: string,
+    @Req() request: Request,
+    @Body() updateFoodRecomendationDto: UpdateFoodRecomendationDto,
+  ) {
+    return await this.foodRecomendationsService.updateOne(
+      id,
+      request,
+      updateFoodRecomendationDto,
+    );
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete/food-recomendation/:id')
+  async deleteOne(@Param('id') id: string, @Req() request: Request) {
+    return await this.foodRecomendationsService.deleteOne(id, request);
   }
 }

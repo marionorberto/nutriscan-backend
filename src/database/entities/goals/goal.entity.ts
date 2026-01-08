@@ -6,8 +6,8 @@ import {
   CreateDateColumn,
   ManyToOne,
 } from 'typeorm';
-import { EnumMedicationType } from '../../../modules/medications/interfaces/interfaces';
 import { User } from '../users/user.entity';
+import { EnumNutritionalGoal } from '@modules/goals/interfaces/interfaces';
 
 @Entity('goals')
 export class Goals {
@@ -21,7 +21,7 @@ export class Goals {
   targetFastingGlucose: number;
 
   @Column({ name: 'nutricional_goal', type: 'json' }) // can be reduce sugar,increase fiber, it will come on mobile
-  nutricionalGoal: EnumMedicationType;
+  nutricionalGoal: EnumNutritionalGoal;
 
   @ManyToOne(() => User, (users) => users.goals)
   user: User;
