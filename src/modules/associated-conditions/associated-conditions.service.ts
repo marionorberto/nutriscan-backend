@@ -301,4 +301,28 @@ export class AssociatedConditionsService {
       );
     }
   }
+
+  async findUserInfo(id: string) {
+    try {
+      const data = await this.userRepo.findOneBy({ id });
+
+      const associatedCondition = [];
+
+      data.associatedCondition.forEach((elem) => {
+        associatedCondition.push(elem);
+      });
+
+      return associatedCondition;
+    } catch (error) {
+      throw new HttpException(
+        {
+          message:
+            'Não foi possível encontrar os dados das suas dados de perfil clínico. Por favor tente novamente mais tarde!',
+          error: error.message,
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
 }

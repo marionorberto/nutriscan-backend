@@ -28,6 +28,7 @@ import { VisionModule } from './modules/vision/vision.module';
 import { EmailModule } from 'shared/email/email.module';
 import { MedicationSchedule } from '@database/entities/medication-schedules/medication-schedules.entity';
 import { FoodDataModule } from '@modules/food-data/food-data.module';
+import { AnalysisModule } from '@modules/analysis/analysis.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -73,6 +74,7 @@ import { FoodDataModule } from '@modules/food-data/food-data.module';
     EmailModule,
     MedicationSchedule,
     FoodDataModule,
+    AnalysisModule,
   ],
   controllers: [AppController],
   providers: [

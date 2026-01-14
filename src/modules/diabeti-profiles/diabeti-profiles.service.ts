@@ -2,22 +2,20 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateDiabeteProfileDto } from './dtos/create-diabete-profiles.dto';
 import { UpdateDiabeteProfileDto } from './dtos/update-diabete-profiles.dto';
 import { DataSource, Repository } from 'typeorm';
-import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
 import { UsersService } from '@modules/users/users.service';
 import { DiabeteProfiles } from '@database/entities/diabeti-profiles/diabeti_profile.entity';
-import {
-  ClinicalEvaluation,
-  ClinicalProfile,
-  FoodClinicalInput,
-} from './interfaces/interfaces';
+import { ClinicalProfilesService } from '@modules/clinical-profiles/clinical-profiles.service';
+import { AllergiesService } from '@modules/allergies/allergies.service';
+import { AssociatedConditionsService } from '@modules/associated-conditions/associated-conditions.service';
 @Injectable()
 export class DiabeteProfilesService {
-  private userRepo: Repository<User>;
+  private medicalProfileService: ClinicalProfilesService;
+  private allergiesService: AllergiesService;
+  private associatedConditionService: AssociatedConditionsService;
   private diabeteProfileRepo: Repository<DiabeteProfiles>;
   private readonly userService: UsersService;
   constructor(private readonly datasource: DataSource) {
-    this.userRepo = this.datasource.getRepository(User);
     this.diabeteProfileRepo = this.datasource.getRepository(DiabeteProfiles);
   }
   async findOne(request: Request) {
@@ -214,53 +212,51 @@ export class DiabeteProfilesService {
     }
   }
 
-  evaluateFood(
-    food: FoodClinicalInput,
-    profile: ClinicalProfile,
-  ): ClinicalEvaluation {
-    const alerts: string[] = [];
+  async gatherProfileData(id: string) {
+    //profile medical
+    const medicalProfileData =
+      await this.medicalProfileService.findUserInfo(id);
 
-    let risk: ClinicalEvaluation['riskLevel'] = 'LOW';
-    let glycemicImpact: ClinicalEvaluation['glycemicImpact'] = 'LOW';
+    //diabete profile
+    const diabeteData = await this.findUserInfo(id);
 
-    // Regra 1 — Açúcar alto
-    if (food.sugar > 10) {
-      risk = 'HIGH';
-      glycemicImpact = 'HIGH';
-      alerts.push('High sugar content');
-    }
+    //allergies profile
+    const allergiesData = await this.allergiesService.findUserInfo(id);
 
-    // Regra 2 — Carboidrato elevado
-    if (food.carbs > 30) {
-      risk = risk === 'HIGH' ? 'HIGH' : 'MODERATE';
-      glycemicImpact = 'MEDIUM';
-      alerts.push('High carbohydrate load');
-    }
-
-    // Regra 3 — Índice glicêmico
-    if (food.glycemicIndex && food.glycemicIndex > 70) {
-      risk = 'HIGH';
-      glycemicImpact = 'HIGH';
-      alerts.push('High glycemic index');
-    }
-
-    // Regra 4 — Perfil diabético
-    if (profile.diabetesType === 'TYPE_2' && risk !== 'LOW') {
-      alerts.push('Not recommended for Type 2 diabetes');
-    }
+    //associated-conditions profile
+    const associatedConditionData =
+      await this.associatedConditionService.findUserInfo(id);
 
     return {
-      food: food.name,
-      riskLevel: risk,
-      glycemicImpact,
-      alerts,
+      medicalProfileData,
+      diabeteData,
+      allergiesData,
+      associatedConditionData,
     };
   }
 
-  evaluateMeal(
-    foods: FoodClinicalInput[],
-    profile: ClinicalProfile,
-  ): ClinicalEvaluation[] {
-    return foods.map((food) => this.evaluateFood(food, profile));
+  async findUserInfo(id: string) {
+    try {
+      const data = await this.diabeteProfileRepo.findOneBy({ id });
+
+      return {
+        diabeteType: data.diabetiType,
+        hyperGlycemiaFrequency: data.hyperGlycemiaFrequency,
+        hypoGlycemiaFrequency: data.hypoGlycemiaFrequency,
+        currentStatus: data.currentStatus,
+        lastFastingGlucose: data.lastFastingGlucose,
+        lastHba1c: data.lastHba1c,
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          message:
+            'Não foi possível encontrar os dados das suas dados de perfil clínico. Por favor tente novamente mais tarde!',
+          error: error.message,
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
   }
 }

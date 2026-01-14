@@ -6,22 +6,66 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator';
-import { EnumTypeUser } from '../interfaces/interfaces';
 
 export class UpdateUsersDto {
-  @MaxLength(40, { message: 'O Username deve ter no máximo 40 caracteres!' })
-  @MinLength(3, { message: 'O Username deve ter no mínimo 3 caracteres!' })
-  @IsString()
+  @MaxLength(30, {
+    message: 'O *primeiro nome deve ter no máximo 30 caracteres!',
+  })
+  @MinLength(3, {
+    message: 'O *primeiro nome deve ter no mínimo 3 caracteres!',
+  })
+  @IsString({ message: '*primeiro nome deve ser texto' })
+  @IsOptional()
+  firstname: string;
+
+  @MaxLength(30, { message: 'O último nome deve ter no máximo 30 caracteres!' })
+  @MinLength(3, { message: 'O último nome deve ter no mínimo 3 caracteres!' })
+  @IsString({ message: '*último nome deve ser texto' })
+  @IsOptional()
+  lastname: string;
+
+  @MaxLength(70, { message: 'O Username deve ter no máximo 70 caracteres!' })
+  @MinLength(3, { message: 'O Username deve ter no mínimo 10 caracteres!' })
+  @IsString({ message: '*username deve ser texto' })
   @IsOptional()
   username: string;
 
   @IsEmail({}, { message: 'Por favor introduza um Email válido!' })
   @IsString({ message: 'O Email deve ser uma string!' })
-  @MaxLength(50, { message: 'O Email deve ter no máximo 50 caracteres!' })
+  @MaxLength(60, { message: 'O Email deve ter no máximo 60 caracteres!' })
   @MinLength(12, { message: 'O Email deve ter no mínimo 12 caracteres!' })
-  @IsNotEmpty({ message: 'O Email deve pode estar vazio!' })
+  @IsNotEmpty({ message: 'O Email não pode estar vazio!' })
   @IsOptional()
   email: string;
+
+  @IsNotEmpty({ message: 'data de nascimento não pode estar vazia' })
+  @IsOptional()
+  birthday: Date;
+
+  @IsNotEmpty({ message: '*Endereço não pode estar vazio.' })
+  @IsOptional()
+  address: string;
+
+  @IsString({ message: '*Telefone deve ser um texto!' })
+  @MaxLength(9, { message: '*Telefone deve ter no máximo 9 caracteres!' })
+  @MinLength(9, { message: 'O Telefone deve ter no mínimo 9 caracteres!' })
+  @IsNotEmpty({ message: 'O Telefone não deve pode estar vazio!' })
+  @IsOptional()
+  phone: string;
+
+  @MaxLength(1, { message: 'O Gênero deve ter no máximo 1 caracteres!' })
+  @MinLength(1, { message: 'O Gênero deve ter no mínimo 1 caracteres!' })
+  @IsString({ message: '*Gênero deve ser texto!' })
+  @IsNotEmpty({ message: 'O Gênero deve pode estar vazio!' })
+  @IsOptional()
+  gender: string;
+
+  @MinLength(10, {
+    message: 'O *imagem nome deve ter no mínimo 10 caracteres!',
+  })
+  @IsNotEmpty({ message: '*Imagem não pode estar vazia!' })
+  @IsOptional()
+  img: string;
 
   @IsString({ message: 'A Password não pode ser Inválida!' })
   @IsNotEmpty({ message: 'A Password não poder estar vazio!' })
@@ -29,9 +73,4 @@ export class UpdateUsersDto {
   @MinLength(8, { message: 'A Password deve ter no mínimo 8 caracteres!' })
   @IsOptional()
   password: string;
-
-  @IsString({ message: 'tipo de usuário deve ser uma string!' })
-  @IsNotEmpty({ message: 'Tipo de usuário não pode ser nulo!' })
-  @IsOptional()
-  typeUser: EnumTypeUser;
 }

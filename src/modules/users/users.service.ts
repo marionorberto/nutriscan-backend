@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUsersDto } from './dtos/create-users.dto';
 import { UpdateUsersDto } from './dtos/update-users.dto';
-import * as crypto from 'crypto';
+// import * as crypto from 'crypto';
 import * as bcryptjs from 'bcryptjs';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
@@ -144,15 +144,13 @@ export class UsersService {
 
   async create(createUsersDto: CreateUsersDto) {
     try {
-      const token = crypto.randomInt(10000, 99999).toString().padStart(6, '0'); // Gerar token de 6 dígitos únicos.
+      // const token = crypto.randomInt(10000, 99999).toString().padStart(6, '0'); // Gerar token de 6 dígitos únicos.
 
-      console.log('this is the token', token);
+      // console.log('this is the token', token);
 
       const userToSave = this.userRepo.create(createUsersDto);
 
       this.emailService.sendRegistrationCode(createUsersDto.email);
-
-      return;
 
       const userSaved = await this.userRepo.save(userToSave);
 
@@ -601,13 +599,13 @@ export class UsersService {
     if (!user)
       throw new HttpException(
         {
-          statusCode: 404,
+          statusCode: 400,
           method: 'GET',
-          message: 'Failure to fetch this user.',
+          message: 'Usuário não autenticado, tente novamente mais tarde!',
           path: '/users/user/:id',
           timestamp: Date.now(),
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.BAD_REQUEST,
       );
 
     return user;

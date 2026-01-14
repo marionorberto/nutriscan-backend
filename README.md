@@ -22,3 +22,52 @@
 
 // curl -XPOST -H "Content-Type:application/json" -d '{"query": "Cheddar cheese", "dataType": ["Branded"], "sortBy": "fdcId", "sortOrder": "desc"}' https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY
 // Note: The "dataType" parameter values need to be specified as an array.
+
+
+
+
+  const alerts: string[] = [];
+
+    let risk: ClinicalEvaluation['riskLevel'] = 'LOW';
+    let glycemicImpact: ClinicalEvaluation['glycemicImpact'] = 'LOW';
+
+    // Regra 1 — Açúcar alto
+    if (food.sugar > 10) {
+      risk = 'HIGH';
+      glycemicImpact = 'HIGH';
+      alerts.push('High sugar content');
+    }
+
+    // Regra 2 — Carboidrato elevado
+    if (food.carbs > 30) {
+      risk = risk === 'HIGH' ? 'HIGH' : 'MODERATE';
+      glycemicImpact = 'MEDIUM';
+      alerts.push('High carbohydrate load');
+    }
+
+    // Regra 3 — Índice glicêmico
+    if (food.glycemicIndex && food.glycemicIndex > 70) {
+      risk = 'HIGH';
+      glycemicImpact = 'HIGH';
+      alerts.push('High glycemic index');
+    }
+
+    // Regra 4 — Perfil diabético
+    if (profile.diabetesType === 'TYPE_2' && risk !== 'LOW') {
+      alerts.push('Not recommended for Type 2 diabetes');
+    }
+
+    return {
+      food: food.name,
+      riskLevel: risk,
+      glycemicImpact,
+      alerts,
+    };
+
+
+      async analyzeImage(imageBuffer: Buffer): Promise<VisionLabel[]> {
+    const labels = await this.visionClientService.detectFoodLabels(imageBuffer);
+
+    // filtro simples para alimentos (POC)
+    return labels.filter((label) => label.confidence >= 0.6);
+  }

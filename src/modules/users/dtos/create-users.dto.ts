@@ -54,6 +54,12 @@ export class CreateUsersDto {
   @IsNotEmpty({ message: 'O Gênero deve pode estar vazio!' })
   gender: string;
 
+  @MinLength(10, {
+    message: 'O *imagem nome deve ter no mínimo 10 caracteres!',
+  })
+  @IsNotEmpty({ message: '*Imagem não pode estar vazia!' })
+  img: string;
+
   @IsString({ message: 'A Password não pode ser Inválida!' })
   @IsNotEmpty({ message: 'A Password não poder estar vazio!' })
   @MaxLength(30, { message: 'A Password deve ter no máximo 30 caracteres!' })

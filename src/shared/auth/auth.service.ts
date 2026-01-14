@@ -56,14 +56,14 @@ export class AuthService {
         );
 
       const payloads = {
-        idUser: userData.id,
+        userId: userData.id,
         username: userData.username,
         role: userData.role,
       };
 
       return {
         acess_token: await this.jwtService.signAsync(payloads),
-        idUser: userData.id,
+        userId: userData.id,
         username: userData.username,
         email: userData.email,
         role: userData.role,
@@ -85,7 +85,7 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     }
-  }
+  } //
 
   async validatePassword(
     plainPassword: string,

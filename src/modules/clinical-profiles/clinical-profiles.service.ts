@@ -213,4 +213,28 @@ export class ClinicalProfilesService {
       );
     }
   }
+
+  async findUserInfo(id: string) {
+    try {
+      const data = await this.clinicalProfileRepo.findOneBy({ id });
+
+      return {
+        bmi: data.height / Math.pow(data.weight, 2),
+        physicalActivityLevel: data.physicalActivityLevel,
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'GET',
+          message:
+            'Não foi possível encontrar os dados das suas dados de perfil clínico. Por favor tente novamente mais tarde!',
+          error: error.message,
+          path: '/app-clinical-profiles/all',
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
 }

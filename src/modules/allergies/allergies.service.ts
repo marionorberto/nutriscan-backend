@@ -293,4 +293,28 @@ export class AllergiesService {
       );
     }
   }
+
+  async findUserInfo(id: string) {
+    try {
+      const data = await this.userRepo.findOneBy({ id });
+
+      const allergies = [];
+
+      data.allergies.forEach((elem) => {
+        allergies.push(elem);
+      });
+
+      return allergies;
+    } catch (error) {
+      throw new HttpException(
+        {
+          message:
+            'Não foi possível encontrar os dados das suas dados de perfil clínico. Por favor tente novamente mais tarde!',
+          error: error.message,
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
 }

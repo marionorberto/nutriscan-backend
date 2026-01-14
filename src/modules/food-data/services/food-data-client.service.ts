@@ -7,7 +7,7 @@ export class FoodDataClientService {
 
   async fetchFood(foodName: string): Promise<FoodNutrition | null> {
     const url =
-      `${this.BASE_URL}?search_terms=${encodeURIComponent(foodName)}` +
+      `${this.BASE_URL}?search_terms=${encodeURIComponent('rice')}` +
       `&search_simple=1&action=process&json=1&page_size=1`;
 
     const response = await fetch(url);

@@ -4,22 +4,25 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
-  Body,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AnalysisService } from './analysis.service';
-import { AnalyzeImageDto } from './dto/analyse-image.dto';
+import { Request } from 'express';
+import { AuthGuard } from 'shared/auth/auth.guard';
 
 @Controller('analysis')
 export class AnalysisController {
   constructor(private readonly analysisService: AnalysisService) {}
 
-  @Post('food')
+  @UseGuards(AuthGuard)
+  @Post('analyze')
   @UseInterceptors(FileInterceptor('image'))
-  async analyzeFood(
-    @UploadedFile() image: Express.Multer.File,
-    @Body() body: AnalyzeImageDto,
+  async analyze(
+    @Req() request: Request,
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.analysisService.analyze(image, body);
+    return this.analysisService.analyze(request, file.buffer);
   }
 }

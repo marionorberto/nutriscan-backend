@@ -1,50 +1,82 @@
 // analysis/analysis.service.ts
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { VisionService } from '../vision/vision.service';
 import { FoodDataService } from '@modules/food-data/services/food-data.service';
 import { DiabeteProfilesService } from '@modules/diabeti-profiles/diabeti-profiles.service';
-import { AiAnalysisService } from '@modules/ai/services/ai-analysi.service';
-import { AnalyzeImageDto } from './dto/analyse-image.dto';
+import { AIService } from '@modules/ai/services/ai.service';
+import { Request } from 'express';
+import { UsersService } from '@modules/users/users.service';
 
 @Injectable()
 export class AnalysisService {
   constructor(
+    private readonly userService: UsersService,
     private readonly visionService: VisionService,
     private readonly foodDataService: FoodDataService,
+    private readonly aiService: AIService,
     private readonly clinicalService: DiabeteProfilesService,
-    private readonly aiService: AiAnalysisService,
   ) {}
 
-  async analyze(image: Express.Multer.File, dto: AnalyzeImageDto ) {
-  /** 1️⃣ Cloud Vision */
-  // const labels = await this.visionService.analyzeImage(image);
+  async analyze(request: Request, image: Buffer) {
+    try {
+      //check whether user is authenticated:
+      const { userId } = request['user'];
 
-  /** 2️⃣ Escolher alimento principal */
-  // const mainFood = labels[0]; // simples para MVP
+      const userData = await this.userService.checkUserIsAuthenticated(userId);
 
-  /** 3️⃣ Buscar dados nutricionais */
-  // const nutrition = await this.foodDataService.getNutrition(mainFood);
+      //call to GCP api
+      const visionResult = await this.visionService.analyze(image);
 
-  /** 4️⃣ Avaliação clínica */
-  // const clinicalResult = this.clinicalService.(
-  // nutrition,
-  // dto.patientProfile,
-  // );
+      // clean data using chatgpt api
+      const foodImageCleanedData =
+        await this.aiService.imageFromGCPDataCleaning(visionResult);
 
-  /** 5️⃣ Análise com IA */
-  // const aiAnalysis = await this.aiService.analyzeFood({
-  // food: mainFood,
-  // nutrition,
-  // clinicalResult,
-  // patientProfile: dto.patientProfile,
-  // });
+      console.log('done', foodImageCleanedData[0]);
 
-  /** 6️⃣ Resposta final */
-    // return {
-      // detectedFood: mainFood,
-      // nutrition,
-      // clinicalResult,
-      // recommendations: aiAnalysis,
-    // };
+      // call to foodData api
+      const foodDataNutritions =
+        await this.foodDataService.getNutrition('rice bean sugar');
+
+      console.log('doing', foodDataNutritions);
+
+      return;
+      // clean data
+      const foodInfoNutritiosCleanedData =
+        await this.aiService.infoFromFoodDataApiCleaning(foodDataNutritions);
+
+      // get profile data to function on profileService
+      const profileUserProfileInfo =
+        await this.clinicalService.gatherProfileData(userData.id);
+
+      // prepare data to frontend
+      const preparetedDataToFrontend =
+        await this.aiService.prepareDataToFrontend(
+          profileUserProfileInfo,
+          foodInfoNutritiosCleanedData,
+        );
+
+      // response to frontend
+      return {
+        statusCode: 200,
+        method: 'GET',
+        message: 'Requisição atendida com sucesso!',
+        path: request.url,
+        timestamp: Date.now(),
+        result: preparetedDataToFrontend,
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'GET',
+          message:
+            'Não foi possível atender essa requisição. Tente novamente mais tarde!',
+          error: error.message,
+          path: request.url,
+          timestamp: Date.now(),
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }
