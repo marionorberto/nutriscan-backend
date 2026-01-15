@@ -59,6 +59,7 @@ export class AuthService {
         userId: userData.id,
         username: userData.username,
         role: userData.role,
+        img: userData,
       };
 
       return {
@@ -67,6 +68,7 @@ export class AuthService {
         username: userData.username,
         email: userData.email,
         role: userData.role,
+        img: userData.img,
       };
     } catch (error) {
       console.log(

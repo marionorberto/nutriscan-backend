@@ -88,8 +88,8 @@ export class AIService {
   }
 
   async prepareDataToFrontend(
-    userProfileData,
-    nutritionalInfoFromImage,
+    userProfileData: any,
+    nutritionalInfoFromImage: any,
   ): Promise<any> {
     try {
       const response = await this.openai.chat.completions.create({

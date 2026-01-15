@@ -31,18 +31,13 @@ export class AnalysisService {
       const foodImageCleanedData =
         await this.aiService.imageFromGCPDataCleaning(visionResult);
 
-      console.log('done', foodImageCleanedData[0]);
-
       // call to foodData api
       const foodDataNutritions =
-        await this.foodDataService.getNutrition('rice bean sugar');
+        await this.foodDataService.getNutritionBatch(foodImageCleanedData);
 
-      console.log('doing', foodDataNutritions);
-
-      return;
       // clean data
-      const foodInfoNutritiosCleanedData =
-        await this.aiService.infoFromFoodDataApiCleaning(foodDataNutritions);
+      // const foodInfoNutritiosCleanedData =
+      //   await this.aiService.infoFromFoodDataApiCleaning(foodDataNutritions);
 
       // get profile data to function on profileService
       const profileUserProfileInfo =
@@ -52,7 +47,8 @@ export class AnalysisService {
       const preparetedDataToFrontend =
         await this.aiService.prepareDataToFrontend(
           profileUserProfileInfo,
-          foodInfoNutritiosCleanedData,
+          foodDataNutritions,
+          // foodInfoNutritiosCleanedData,
         );
 
       // response to frontend
@@ -70,7 +66,7 @@ export class AnalysisService {
           statusCode: 400,
           method: 'GET',
           message:
-            'Não foi possível atender essa requisição. Tente novamente mais tarde!',
+            'aqui !!Não foi possível atender essa requisição. Tente novamente mais tarde!',
           error: error.message,
           path: request.url,
           timestamp: Date.now(),

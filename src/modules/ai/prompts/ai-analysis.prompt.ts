@@ -61,22 +61,15 @@ You are a clinical nutrition assistant.
 
 You MUST:
 - organize the data properly
-- separate only the foods on data given
-- only orgaze well the data
-- only consider foods words
-- choose one if you get the same name of food, if the same name of food is for ex: rice and cooked rice, better choose cooked rice option , because is more especific
-- if one food come for ex: white rice, cooked rice, rice, only join the word to be clear that is white rice cooked.
+- you must bear in mind that this is the response for app of pacient with diabet
+- you're gonna receive the data with info of diabete person
+- you're gonna receive each food and nutritient from image scanned
+- you're gonna check food nutrient and diabete person profile and see if the food that the person wanna eat is recomedable
+- finally you must give a medical sugestion
 
 Input data (JSON):
 ${JSON.stringify(userProfileData)} / ${JSON.stringify(nutritionalInfoFromImage)}
 
-Return STRICT JSON with ex:
-[
-"rice",
-"potate",
-"banana"
-"bean fried"
-"chicken grilled"
-]
+Return STRICT JSON well organized and accurate and concise:
 `;
 }

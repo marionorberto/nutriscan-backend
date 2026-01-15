@@ -328,6 +328,7 @@ export class UsersService {
         username: userFetched.username,
         email: userFetched.email,
         role: userFetched.role,
+        img: userFetched.img,
         password: userFetched.password,
       };
     } catch (error) {
