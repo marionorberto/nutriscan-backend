@@ -7,8 +7,6 @@ import {
   Put,
   Delete,
   UseGuards,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   Req,
 } from '@nestjs/common';
 import { DiabeteProfilesService } from './diabeti-profiles.service';
@@ -22,26 +20,20 @@ export class DiabeteProfilesController {
   constructor(
     private readonly diabeteProfilesService: DiabeteProfilesService,
   ) {}
+
   @UseGuards(AuthGuard)
-  @Get('clinical-profile/:id')
-  @UseInterceptors(ClassSerializerInterceptor)
+  @Get('diabete-profile')
   async findOne(@Req() request: Request) {
     return await this.diabeteProfilesService.findOne(request);
   }
 
-  @Post('create/clinical-profile')
-  create(
-    @Req() request: Request,
-    @Body() createClinicalProfileDto: CreateDiabeteProfileDto,
-  ) {
-    return this.diabeteProfilesService.create(
-      request,
-      createClinicalProfileDto,
-    );
+  @Post('create/diabete-profile')
+  create(@Body() createClinicalProfileDto: CreateDiabeteProfileDto) {
+    return this.diabeteProfilesService.create(createClinicalProfileDto);
   }
 
   @UseGuards(AuthGuard)
-  @Put('update/clinical-profile')
+  @Put('update/diabete-profile')
   async updateOne(
     @Param() id: string,
     @Req() request: Request,
@@ -55,7 +47,7 @@ export class DiabeteProfilesController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete('delete/clinical-profile/:id')
+  @Delete('delete/diabete-profile/:id')
   async deleteOne(@Param('id') id: string, @Req() request: Request) {
     return await this.diabeteProfilesService.deleteOne(id, request);
   }

@@ -35,10 +35,10 @@ export class DiabeteProfiles {
   @Column({ name: 'last_hba1c', type: 'decimal' })
   lastHba1c: number;
 
-  @Column({ name: 'hypo_glycemia_frequency', type: 'decimal' })
+  @Column({ name: 'hypo_glycemia_frequency', type: 'varchar' })
   hypoGlycemiaFrequency: EnumHypoGlycemiaFrequency;
 
-  @Column({ name: 'hyper_glycemia_frequency', type: 'decimal' })
+  @Column({ name: 'hyper_glycemia_frequency', type: 'varchar' })
   hyperGlycemiaFrequency: EnumHyperGlycemiaFrequency;
 
   @OneToOne(() => User, {

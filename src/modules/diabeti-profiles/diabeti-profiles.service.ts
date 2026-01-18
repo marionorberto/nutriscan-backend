@@ -8,28 +8,40 @@ import { DiabeteProfiles } from '@database/entities/diabeti-profiles/diabeti_pro
 import { ClinicalProfilesService } from '@modules/clinical-profiles/clinical-profiles.service';
 import { AllergiesService } from '@modules/allergies/allergies.service';
 import { AssociatedConditionsService } from '@modules/associated-conditions/associated-conditions.service';
+import {
+  EnumHyperGlycemiaFrequency,
+  EnumHypoGlycemiaFrequency,
+  EnumCurrentStatus,
+  EnumDiabetiType,
+} from './interfaces/interfaces';
 @Injectable()
 export class DiabeteProfilesService {
-  private medicalProfileService: ClinicalProfilesService;
-  private allergiesService: AllergiesService;
-  private associatedConditionService: AssociatedConditionsService;
   private diabeteProfileRepo: Repository<DiabeteProfiles>;
-  private readonly userService: UsersService;
-  constructor(private readonly datasource: DataSource) {
+  constructor(
+    private readonly datasource: DataSource,
+    private readonly medicalProfileService: ClinicalProfilesService,
+    private readonly allergiesService: AllergiesService,
+    private readonly associatedConditionService: AssociatedConditionsService,
+    private readonly userService: UsersService,
+  ) {
     this.diabeteProfileRepo = this.datasource.getRepository(DiabeteProfiles);
   }
   async findOne(request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      const user = await this.userService.checkUserIsAuthenticated(idUser);
+      const user = await this.userService.checkUserIsAuthenticated(userId);
+
+      console.log('user for di', user);
 
       if (user) {
-        const data = this.diabeteProfileRepo.findAndCount({
+        const data = await this.diabeteProfileRepo.findOne({
           where: {
             user,
           },
         });
+
+        console.log('data di', data);
 
         return {
           statusCode: 200,
@@ -56,22 +68,27 @@ export class DiabeteProfilesService {
     }
   }
 
-  async create(
-    request: Request,
-    creatediabeteProfileDto: CreateDiabeteProfileDto,
-  ) {
+  async create(createDiabeteProfileDto: CreateDiabeteProfileDto) {
     try {
-      const { idUser } = request['user'];
-
-      const user = await this.userService.checkUserIsAuthenticated(idUser);
-
       const diabeteProfileToSave = this.diabeteProfileRepo.create({
-        ...creatediabeteProfileDto,
+        ...createDiabeteProfileDto,
+        currentStatus: EnumCurrentStatus[createDiabeteProfileDto.currentStatus],
+        diabetiType: EnumDiabetiType[createDiabeteProfileDto.diabetiType],
+        hyperGlycemiaFrequency:
+          EnumHyperGlycemiaFrequency[
+            createDiabeteProfileDto.hyperGlycemiaFrequency
+          ],
+        hypoGlycemiaFrequency:
+          EnumHypoGlycemiaFrequency[
+            createDiabeteProfileDto.hypoGlycemiaFrequency
+          ],
       });
 
       const diabeteProfileSaved = await this.diabeteProfileRepo.save({
         ...diabeteProfileToSave,
-        user,
+        user: {
+          id: createDiabeteProfileDto.userID,
+        },
       });
 
       const { id, currentStatus, diabetiType, diagnosisYear, createdAt } =
@@ -237,7 +254,13 @@ export class DiabeteProfilesService {
 
   async findUserInfo(id: string) {
     try {
-      const data = await this.diabeteProfileRepo.findOneBy({ id });
+      const data = await this.diabeteProfileRepo.findOne({
+        where: {
+          user: {
+            id,
+          },
+        },
+      });
 
       return {
         diabeteType: data.diabetiType,

@@ -6,7 +6,7 @@ import { jwtContants } from './constants';
 import { UsersModule } from '@modules/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@database/entities/users/user.entity';
-import { UsersService } from 'modules/users/users.service';
+import { UsersService } from '@modules/users/users.service';
 
 @Module({
   imports: [

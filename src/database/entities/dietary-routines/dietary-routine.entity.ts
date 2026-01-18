@@ -21,7 +21,7 @@ export class DietaryRoutines {
   @Column({ name: 'favorite_foods', type: 'json', nullable: false })
   favoriteFoods: string;
 
-  @Column({ name: 'foods_to_avoid', type: 'json', nullable: false })
+  @Column({ name: 'foods_to_avoid', type: 'json', nullable: true })
   foodsToAvoid: string;
 
   @Column({ name: 'meal_schedules', type: 'json', nullable: true })
@@ -34,7 +34,7 @@ export class DietaryRoutines {
   })
   culturalPreferences: EnumCulturalPreference;
 
-  @Column({ name: 'religious_restrictions', type: 'json' })
+  @Column({ name: 'religious_restrictions', type: 'json', nullable: true })
   religiousRestrictions: string;
 
   @OneToOne(() => User, {

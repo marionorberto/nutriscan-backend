@@ -23,29 +23,20 @@ export class AssociatedConditionsController {
     private readonly associatedConditionService: AssociatedConditionsService,
   ) {}
 
-  @UseGuards(AuthGuard)
   @Get('all')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findAll(@Req() request: Request) {
-    return await this.associatedConditionService.findAll(request);
+  async findAll() {
+    return await this.associatedConditionService.findAll();
   }
 
-  @UseGuards(AuthGuard)
   @Get('associated-condition')
-  @UseInterceptors(ClassSerializerInterceptor)
   async findByPk(@Param('id') id: string, @Req() request: Request) {
     return await this.associatedConditionService.findByPk(id, request);
   }
 
   @Post('create/associated-condition')
-  create(
-    @Req() request: Request,
-    @Body() createAssociatedConditionDto: CreateAssociatedConditionDto,
-  ) {
-    return this.associatedConditionService.create(
-      request,
-      createAssociatedConditionDto,
-    );
+  create(@Body() createAssociatedConditionDto: CreateAssociatedConditionDto) {
+    return this.associatedConditionService.create(createAssociatedConditionDto);
   }
 
   @UseGuards(AuthGuard)

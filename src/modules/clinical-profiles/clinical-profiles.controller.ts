@@ -24,21 +24,15 @@ export class ClinicalProfileController {
   ) {}
 
   @UseGuards(AuthGuard)
-  @Get('clinical-profile/:id')
+  @Get('clinical-profile')
   @UseInterceptors(ClassSerializerInterceptor)
   async findOne(@Req() request: Request) {
     return await this.clinicalProfileService.findOne(request);
   }
 
   @Post('create/clinical-profile')
-  create(
-    @Req() request: Request,
-    @Body() createClinicalProfileDto: CreateClinicalProfileDto,
-  ) {
-    return this.clinicalProfileService.create(
-      request,
-      createClinicalProfileDto,
-    );
+  create(@Body() createClinicalProfileDto: CreateClinicalProfileDto) {
+    return this.clinicalProfileService.create(createClinicalProfileDto);
   }
 
   @UseGuards(AuthGuard)

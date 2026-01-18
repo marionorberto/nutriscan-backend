@@ -1,26 +1,33 @@
 export enum EnumDiabetiType {
-  type1 = 'TYPE1',
-  type2 = 'TYPE2',
-  gestacional = 'GESTACIONAL',
-  preDiabetis = 'PRE-DIABETIS',
+  tipo1 = 'tipo1',
+  tipo2 = 'tipo2',
+  gestacional = 'gestacional',
+  preDiabete = 'preDiabete',
 }
 
 export enum EnumCurrentStatus {
-  controlled = 'CONTROLLED',
-  uncontrolled = 'UNCONTROLLED',
+  controlada = 'controlada',
+  descontrolada = 'descontrolada',
 }
 
 export enum EnumHypoGlycemiaFrequency {
-  low = 'LOW',
-  medium = 'MEDIUM',
-  high = 'HIGH',
+  baixa = 'baixa',
+  media = 'media',
+  alta = 'alta',
 }
 
 export enum EnumHyperGlycemiaFrequency {
-  low = 'LOW',
-  medium = 'MEDIUM',
-  high = 'HIGH',
+  baixa = 'baixa',
+  media = 'media',
+  alta = 'alta',
 }
+
+//////////////////
+//////////////////
+//////////////////
+//////////////////
+//////////////////
+// ver oque se passa abaixo:
 
 export interface ClinicalProfile {
   diabetesType: 'TYPE_1' | 'TYPE_2';

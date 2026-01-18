@@ -1,5 +1,6 @@
 export enum EnumCulturalPreference {
-  angolan = 'ANGOLANA',
-  vegetariam = 'VEGETARIANA',
-  fastFood = 'FAST-FOOD',
+  angolana = 'angolana',
+  vegetariana = 'vegetariana',
+  fastFood = 'fastfood',
+  mediterrania = 'mediterrania',
 }

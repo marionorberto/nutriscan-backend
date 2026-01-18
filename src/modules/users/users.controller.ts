@@ -29,6 +29,7 @@ export class UsersController {
   }
 
   // @UseGuards(AuthGuard)  -> ask for token
+  @UseGuards(AuthGuard)
   @Get('user')
   @UseInterceptors(ClassSerializerInterceptor)
   async findByPk(@Req() request: Request) {
@@ -64,30 +65,8 @@ export class UsersController {
     return await this.usersServices.updatePassword(request, updatePasswordDto);
   }
 
-  // @UseGuards(AuthGuard)
-  // @Put('password/user/update')
-  // async updatePassword(
-  //   @Req() request: Request,
-  //   @Body() updatePasswordDto: UpdatePasswordDto,
-  // ) {
-  //   return await this.usersServices.updatePassword(request, updatePasswordDto);
-  // }
-
-  // @UseGuards(AuthGuard)
-  // @Put('password/user/update')
-  // async updatePassword(
-  //   @Req() request: Request,
-  //   @Body() updatePasswordDto: UpdatePasswordDto,
-  // ) {
-  //   return await this.usersServices.updatePassword(request, updatePasswordDto);
-  // }
-
-  // @UseGuards(AuthGuard)
-  // @Put('password/user/update')
-  // async updatePassword(
-  //   @Req() request: Request,
-  //   @Body() updatePasswordDto: UpdatePasswordDto,
-  // ) {
-  //   return await this.usersServices.updatePassword(request, updatePasswordDto);
-  // }
+  @Post('check/email')
+  async alreadyAnEmailRegisted(@Body() data: { email: string }) {
+    return await this.usersServices.alreadyAnEmailRegisted(data);
+  }
 }

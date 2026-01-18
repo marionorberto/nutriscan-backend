@@ -6,6 +6,7 @@ import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
 import { DietaryRoutines } from '@database/entities/dietary-routines/dietary-routine.entity';
 import { UsersService } from '@modules/users/users.service';
+import { EnumCulturalPreference } from './interfaces/interfaces';
 @Injectable()
 export class DietaryRoutineService {
   private userRepository: Repository<User>;
@@ -53,22 +54,19 @@ export class DietaryRoutineService {
     }
   }
 
-  async create(
-    request: Request,
-    createDietaryRoutineDto: CreateDietaryRoutineDto,
-  ) {
+  async create(createDietaryRoutineDto: CreateDietaryRoutineDto) {
     try {
-      const { idUser } = request['user'];
-
-      const user = await this.userService.checkUserIsAuthenticated(idUser);
-
       const diabeteProfileToSave = this.dietaryRoutineRepo.create({
         ...createDietaryRoutineDto,
+        culturalPreferences:
+          EnumCulturalPreference[createDietaryRoutineDto.culturalPreferences],
       });
 
       const diabeteProfileSaved = await this.dietaryRoutineRepo.save({
         ...diabeteProfileToSave,
-        user,
+        user: {
+          id: createDietaryRoutineDto.userID,
+        },
       });
 
       const {
@@ -81,6 +79,10 @@ export class DietaryRoutineService {
         religiousRestrictions,
         createdAt,
       } = diabeteProfileSaved;
+
+      await this.userRepository.update(createDietaryRoutineDto.userID, {
+        registrationCompleted: true,
+      });
 
       return {
         statusCode: 201,

@@ -19,38 +19,32 @@ export class AssociatedConditionsService {
       this.datasource.getRepository(AssociatedConditions);
   }
 
-  async findAll(request: Request) {
+  async findAll() {
     try {
-      const { idUser } = request['user'];
-
-      const { data } = await this.userService.findById(idUser);
-
-      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
-
-      if (!isAdminUserAction)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'DELETE',
-            message: 'User do not have suficcient permission',
-            path: '/allergies/delete/:id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-
-      const allergies = this.associatedConditionRepo.findAndCount();
+      const associatedConditions =
+        await this.associatedConditionRepo.findAndCount();
 
       return {
         statusCode: 200,
         method: 'GET',
-        message: 'Allergies fetched sucessfully.',
-        data: allergies,
-        path: '/allergies/all',
+        message: 'Requisição atendida com sucesso!',
+        data: associatedConditions,
+        path: '/associated-conditions/all',
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(error);
+      throw new HttpException(
+        {
+          statusCode: 404,
+          method: 'GET',
+          message:
+            'Não foi possível atender a essa requisição. Tente novamente mais tarde',
+          error: error.message,
+          path: '/associated-conditions/all',
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 
@@ -117,29 +111,8 @@ export class AssociatedConditionsService {
     }
   }
 
-  async create(
-    request: Request,
-    createAssociatedConditionDto: CreateAssociatedConditionDto,
-  ) {
+  async create(createAssociatedConditionDto: CreateAssociatedConditionDto) {
     try {
-      const { idUser } = request['user'];
-
-      const { data } = await this.userService.findById(idUser);
-
-      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
-
-      if (!isAdminUserAction)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'DELETE',
-            message: 'User do not have suficcient permission',
-            path: '/allergies/delete/:id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-
       const associatedConditionToSave = this.associatedConditionRepo.create(
         createAssociatedConditionDto,
       );
@@ -152,13 +125,13 @@ export class AssociatedConditionsService {
       return {
         statusCode: 201,
         method: 'POST',
-        message: 'User created sucessfully',
+        message: 'Condição associada criada com sucesso',
         data: {
           id,
           description,
           createdAt,
         },
-        path: '/allergies/create/allergy',
+        path: '/ac/create/ac',
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -170,9 +143,9 @@ export class AssociatedConditionsService {
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falha ao cadastrar nova *Allergia, ${error.message}`,
+          message: `Falha ao cadastrar nova *ac, ${error.message}`,
           error: error.message,
-          path: '/allergies/create/allergy',
+          path: '/ac/create/ac',
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -304,15 +277,17 @@ export class AssociatedConditionsService {
 
   async findUserInfo(id: string) {
     try {
-      const data = await this.userRepo.findOneBy({ id });
-
-      const associatedCondition = [];
-
-      data.associatedCondition.forEach((elem) => {
-        associatedCondition.push(elem);
+      const data = await this.userRepo.findOne({
+        where: {
+          id,
+        },
+        relations: {
+          associatedCondition: true,
+        },
       });
 
-      return associatedCondition;
+      if (!data || !data.associatedCondition) return [];
+      return data.associatedCondition; // Não precisa de forEach para clonar
     } catch (error) {
       throw new HttpException(
         {

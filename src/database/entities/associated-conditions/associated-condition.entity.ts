@@ -11,7 +11,7 @@ export class AssociatedConditions {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id: string;
 
-  @Column({ name: 'description', type: 'varchar', length: '60' })
+  @Column({ name: 'description', type: 'varchar', length: '60', unique: true })
   description: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

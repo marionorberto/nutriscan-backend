@@ -59,7 +59,7 @@ export class AuthService {
         userId: userData.id,
         username: userData.username,
         role: userData.role,
-        img: userData,
+        img: userData.img,
       };
 
       return {

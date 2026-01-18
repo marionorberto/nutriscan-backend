@@ -1,3 +1,55 @@
+Hipertensão arterial
+    • Pressão alta
+    • Obesidade
+    • Dislipidemia
+    • Alterações no colesterol
+    • Doença cardiovascular
+    • insuficiência cardíaca.
+    • Nefropatia diabética
+    • Comprometimento dos rins.
+    • Retinopatia diabética
+    • Danos nos vasos da retina
+    • Neuropatia diabética
+    • Danos nos nervos periféricos.
+    • Outros
+
+
+    • Leite de vaca
+    • Ovos
+    • Amendoim
+    • Soja
+    • Trigo
+    • Peixes
+    • Frutos do mar (camarão, caranguejo, lagosta)
+    • Castanha de caju
+    • Amêndoa
+    • Noz
+    • Avelã
+    • Pistache
+    • Castanha-do-pará
+    • Gergelim
+    • Milho
+    • Mostarda
+    • Aveia
+    • Sulfitos (presentes em vinhos, frutas secas, alimentos processados)
+    • Glúten (presentes em trigo...)
+    • Lactose (presentes em Leite...)
+    • Outros
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   // async sendEmail({ to, username, token }) {

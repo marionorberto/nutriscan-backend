@@ -12,10 +12,7 @@ import {
 } from 'typeorm';
 import * as bcryptjs from 'bcryptjs';
 import { Exclude } from 'class-transformer';
-import {
-  EnumGenderUser,
-  EnumTypeUser,
-} from '../../../modules/users/interfaces/interfaces';
+import { EnumTypeUser } from '../../../modules/profiles/interfaces/interfaces';
 import { Allergies } from '../allergies/allergy.entity';
 import { AssociatedConditions } from '../associated-conditions/associated-condition.entity';
 import { FoodItems } from '../food-items/food-item.entity';
@@ -42,21 +39,6 @@ export class User {
   @Column({ name: 'email', type: 'varchar', length: '60', unique: true })
   email: string;
 
-  @Column({ name: 'birthday', type: 'date' })
-  birthday: Date;
-
-  @Column({ name: 'address', type: 'json' })
-  address: string;
-
-  @Column({ name: 'main_phone', type: 'varchar', length: '9' })
-  phone: string;
-
-  @Column({ name: 'gender', type: 'enum', enum: EnumGenderUser })
-  gender: string;
-
-  @Column({ name: 'img', type: 'varchar', nullable: false })
-  img: string;
-
   @Column({
     name: 'role',
     type: 'enum',
@@ -71,6 +53,13 @@ export class User {
     default: true,
   })
   active: boolean;
+
+  @Column({
+    name: 'registration_completed',
+    type: 'boolean',
+    default: false,
+  })
+  registrationCompleted: boolean;
 
   @Column({ name: 'password_hash', type: 'text' })
   @Exclude()

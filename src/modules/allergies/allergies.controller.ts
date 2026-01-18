@@ -16,16 +16,15 @@ import { UpdateAllergyDto } from './dtos/update-allergies.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 import { AllergiesService } from './allergies.service';
+import { CreateAllergyAssociationDto } from './dtos/create-allergies-association.dto';
 
 @Controller('allergies')
 export class AllergiesController {
   constructor(private readonly allergiesService: AllergiesService) {}
 
-  @UseGuards(AuthGuard)
   @Get('all')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findAll(@Req() request: Request) {
-    return await this.allergiesService.findAll(request);
+  async findAll() {
+    return await this.allergiesService.findAll();
   }
 
   @UseGuards(AuthGuard)
@@ -36,8 +35,13 @@ export class AllergiesController {
   }
 
   @Post('create/allergy')
-  create(@Req() request: Request, @Body() createallergyDto: CreateAllergyDto) {
-    return this.allergiesService.create(request, createallergyDto);
+  create(@Body() createallergyDto: CreateAllergyDto) {
+    return this.allergiesService.create(createallergyDto);
+  }
+
+  @Post('create-association/allergy')
+  createAssociation(@Body() createallergyDto: CreateAllergyAssociationDto) {
+    return this.allergiesService.createAssociation(createallergyDto);
   }
 
   @UseGuards(AuthGuard)

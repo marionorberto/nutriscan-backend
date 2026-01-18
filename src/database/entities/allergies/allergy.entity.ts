@@ -15,6 +15,7 @@ export class Allergies {
     name: 'description',
     type: 'varchar',
     length: '20',
+    unique: true,
     nullable: false,
   })
   description: string;

@@ -22,26 +22,40 @@ export class AnalysisService {
       //check whether user is authenticated:
       const { userId } = request['user'];
 
-      const userData = await this.userService.checkUserIsAuthenticated(userId);
+      // console.time('TempoTotalAnalyze'); // Inicia o cronômetro global
 
+      const [profileUserProfileInfo, visionResult] = await Promise.all([
+        this.clinicalService.gatherProfileData(userId),
+        this.visionService.analyze(image),
+      ]);
+
+      // console.time('GCP-Vision');
       //call to GCP api
-      const visionResult = await this.visionService.analyze(image);
+      // const visionResult = await this.visionService.analyze(image);
+      // console.timeEnd('GCP-Vision');
 
+      // console.time('GPT-Limpeza');
       // clean data using chatgpt api
       const foodImageCleanedData =
         await this.aiService.imageFromGCPDataCleaning(visionResult);
+      // console.timeEnd('GPT-Limpeza');
 
+      // console.time('foodDATA');
       // call to foodData api
       const foodDataNutritions =
         await this.foodDataService.getNutritionBatch(foodImageCleanedData);
+      // console.timeEnd('FOODdata');
 
+      // console.timeEnd('TempoTotalAnalyze'); // Finaliza o global
       // clean data
       // const foodInfoNutritiosCleanedData =
       //   await this.aiService.infoFromFoodDataApiCleaning(foodDataNutritions);
 
+      // return foodDataNutritions;
+
       // get profile data to function on profileService
-      const profileUserProfileInfo =
-        await this.clinicalService.gatherProfileData(userData.id);
+      // const profileUserProfileInfo =
+      // await this.clinicalService.gatherProfileData(userId);
 
       // prepare data to frontend
       const preparetedDataToFrontend =
@@ -50,6 +64,8 @@ export class AnalysisService {
           foodDataNutritions,
           // foodInfoNutritiosCleanedData,
         );
+
+      console.log(preparetedDataToFrontend);
 
       // response to frontend
       return {
@@ -61,12 +77,13 @@ export class AnalysisService {
         result: preparetedDataToFrontend,
       };
     } catch (error) {
+      console.log('scan error ->', error.message);
       throw new HttpException(
         {
           statusCode: 400,
           method: 'GET',
           message:
-            'aqui !!Não foi possível atender essa requisição. Tente novamente mais tarde!',
+            'Não foi possível atender essa requisição. Tente novamente mais tarde!',
           error: error.message,
           path: request.url,
           timestamp: Date.now(),

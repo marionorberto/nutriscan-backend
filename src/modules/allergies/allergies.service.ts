@@ -1,11 +1,18 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAllergyDto } from './dtos/create-allergies.dto';
 import { UpdateAllergyDto } from './dtos/update-allergies.dto';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
 import { Allergies } from '@database/entities/allergies/allergy.entity';
 import { UsersService } from '@modules/users/users.service';
+import { CreateAllergyAssociationDto } from './dtos/create-allergies-association.dto';
 @Injectable()
 export class AllergiesService {
   private userRepo: Repository<User>;
@@ -18,27 +25,9 @@ export class AllergiesService {
     this.allergyRepo = this.datasource.getRepository(Allergies);
   }
 
-  async findAll(request: Request) {
+  async findAll() {
     try {
-      const { idUser } = request['user'];
-
-      const { data } = await this.userService.findById(idUser);
-
-      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
-
-      if (!isAdminUserAction)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'DELETE',
-            message: 'User do not have suficcient permission',
-            path: '/allergies/delete/:id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-
-      const allergies = this.allergyRepo.findAndCount();
+      const allergies = await this.allergyRepo.findAndCount();
 
       return {
         statusCode: 200,
@@ -49,7 +38,17 @@ export class AllergiesService {
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(error);
+      throw new HttpException(
+        {
+          statusCode: 404,
+          method: 'GET',
+          message: 'Failed to fetch this allergy.',
+          error: error.message,
+          path: '/allergies/all',
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 
@@ -116,26 +115,8 @@ export class AllergiesService {
     }
   }
 
-  async create(request: Request, createAllergyDto: CreateAllergyDto) {
+  async create(createAllergyDto: CreateAllergyDto) {
     try {
-      const { idUser } = request['user'];
-
-      const { data } = await this.userService.findById(idUser);
-
-      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
-
-      if (!isAdminUserAction)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'DELETE',
-            message: 'User do not have suficcient permission',
-            path: '/allergies/delete/:id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-
       const allergyToSave = this.allergyRepo.create(createAllergyDto);
       const allergySaved = await this.allergyRepo.save(allergyToSave);
 
@@ -144,7 +125,7 @@ export class AllergiesService {
       return {
         statusCode: 201,
         method: 'POST',
-        message: 'User created sucessfully',
+        message: 'Allergia criada com sucesso!',
         data: {
           id,
           description,
@@ -155,15 +136,67 @@ export class AllergiesService {
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed  to create a new Allergy | Error Message: ${error.message}`,
-      );
-
       throw new HttpException(
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falha ao cadastrar nova *Allergia, ${error.message}`,
+          message: `Falha ao cadastrar nova *Allergia`,
+          error: error.message,
+          path: '/allergies/create/allergy',
+          timestamp: Date.now(),
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async createAssociation(createAllergyDto: CreateAllergyAssociationDto) {
+    try {
+      // 1️⃣ Buscar o usuário com relações
+      const user = await this.userRepo.findOne({
+        where: { id: createAllergyDto.userID },
+        relations: {
+          allergies: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      // 2️⃣ Buscar as conditions pelo array de IDs
+      const allergies = await this.allergyRepo.findBy({
+        id: In(createAllergyDto.allergies),
+      });
+
+      if (allergies.length !== createAllergyDto.allergies.length) {
+        throw new BadRequestException(
+          'Uma ou mais condições não foram encontradas',
+        );
+      }
+
+      // 3️⃣ Associar (substitui as existentes)
+      user.allergies = allergies;
+
+      // 4️⃣ Salvar
+      await this.userRepo.save(user);
+
+      return {
+        statusCode: 201,
+        method: 'POST',
+        message: 'Allergia criada com sucesso!',
+        data: {
+          status: 'Registo criado com sucesso!',
+        },
+        path: '/allergies/create/allergy',
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'POST',
+          message: `Falha ao cadastrar nova *Allergia`,
           error: error.message,
           path: '/allergies/create/allergy',
           timestamp: Date.now(),
@@ -296,15 +329,17 @@ export class AllergiesService {
 
   async findUserInfo(id: string) {
     try {
-      const data = await this.userRepo.findOneBy({ id });
-
-      const allergies = [];
-
-      data.allergies.forEach((elem) => {
-        allergies.push(elem);
+      const data = await this.userRepo.findOne({
+        where: {
+          id,
+        },
+        relations: {
+          allergies: true,
+        },
       });
 
-      return allergies;
+      if (!data || !data.allergies) return [];
+      return data.allergies; // Não precisa de forEach para clonar
     } catch (error) {
       throw new HttpException(
         {

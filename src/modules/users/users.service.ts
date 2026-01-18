@@ -1,21 +1,34 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUsersDto } from './dtos/create-users.dto';
 import { UpdateUsersDto } from './dtos/update-users.dto';
 // import * as crypto from 'crypto';
 import * as bcryptjs from 'bcryptjs';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { EmailService } from 'shared/email/email.service';
+import { Profiles } from '@database/entities/profile/profile.entity';
+import { AssociatedConditions } from '@database/entities/associated-conditions/associated-condition.entity';
 @Injectable()
 export class UsersService {
   private userRepo: Repository<User>;
+  private profileRepo: Repository<Profiles>;
+  private associatedConditionRepo: Repository<AssociatedConditions>;
   constructor(
     private readonly datasource: DataSource,
     private readonly emailService: EmailService,
   ) {
     this.userRepo = this.datasource.getRepository(User);
+    this.profileRepo = this.datasource.getRepository(Profiles);
+    this.associatedConditionRepo =
+      this.datasource.getRepository(AssociatedConditions);
   }
 
   async findAll() {
@@ -56,9 +69,9 @@ export class UsersService {
 
   async findByPk(request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      const user = await this.userRepo.findOneBy({ id: idUser });
+      const user = await this.userRepo.findOneBy({ id: userId });
 
       if (!user)
         throw new HttpException(
@@ -144,27 +157,13 @@ export class UsersService {
 
   async create(createUsersDto: CreateUsersDto) {
     try {
-      // const token = crypto.randomInt(10000, 99999).toString().padStart(6, '0'); // Gerar token de 6 dígitos únicos.
-
-      // console.log('this is the token', token);
-
       const userToSave = this.userRepo.create(createUsersDto);
 
       this.emailService.sendRegistrationCode(createUsersDto.email);
 
       const userSaved = await this.userRepo.save(userToSave);
 
-      const {
-        id,
-        firstname,
-        lastname,
-        username,
-        email,
-        phone,
-        address,
-        gender,
-        createdAt,
-      } = userSaved;
+      const { id, firstname, lastname, username, email, createdAt } = userSaved;
 
       return {
         statusCode: 201,
@@ -176,9 +175,6 @@ export class UsersService {
           lastname,
           username,
           email,
-          phone,
-          address,
-          gender,
           password: createUsersDto.password,
           createdAt,
         },
@@ -298,6 +294,13 @@ export class UsersService {
   async findOne(data: any) {
     try {
       const userFetched: User = await this.userRepo.findOne(data);
+      const profileFetched: Profiles = await this.profileRepo.findOne({
+        where: {
+          user: {
+            id: userFetched.id,
+          },
+        },
+      });
 
       if (!userFetched.active) {
         throw new HttpException(
@@ -328,8 +331,8 @@ export class UsersService {
         username: userFetched.username,
         email: userFetched.email,
         role: userFetched.role,
-        img: userFetched.img,
         password: userFetched.password,
+        img: profileFetched.img,
       };
     } catch (error) {
       console.log(`Failed to fetch User | Error Message: ${error.message}`);
@@ -610,5 +613,99 @@ export class UsersService {
       );
 
     return user;
+  }
+
+  async alreadyAnEmailRegisted(data: { email: string }) {
+    try {
+      // Busca o usuário pelo email
+      const user = await this.userRepo.findOne({
+        where: {
+          email: data.email,
+        },
+      });
+
+      // Se o usuário existir, significa que o email já está registrado
+      if (user) {
+        return {
+          statusCode: 200,
+          method: 'GET',
+          message: 'Email já foi registado.',
+          data: { registered: true },
+          path: '/users/check/email',
+          timestamp: Date.now(),
+        };
+      }
+
+      // Se não existir, o email está disponível
+      return {
+        statusCode: 200,
+        method: 'GET',
+        message: 'Email is available for registration.',
+        data: { registered: false },
+        path: '/users/check/email',
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.log(
+        `Failed to check email registration. | Error Message: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          statusCode: 500, // Erro interno ao tentar consultar o banco
+          method: 'GET',
+          message: 'Failed to check if email exists.',
+          error: error.message,
+          path: '/users/check/email',
+          timestamp: Date.now(),
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async bindAssociateConditions(userID: string, selectedConditions: string[]) {
+    try {
+      console.log('tres', userID, selectedConditions);
+      // 1️⃣ Buscar o usuário com relações
+      const user = await this.userRepo.findOne({
+        where: { id: userID },
+        relations: {
+          associatedCondition: true,
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado');
+      }
+
+      // 2️⃣ Buscar as conditions pelo array de IDs
+      const conditions = await this.associatedConditionRepo.findBy({
+        id: In(selectedConditions),
+      });
+
+      if (conditions.length !== selectedConditions.length) {
+        throw new BadRequestException(
+          'Uma ou mais condições não foram encontradas',
+        );
+      }
+
+      // 3️⃣ Associar (substitui as existentes)
+      user.associatedCondition = conditions;
+
+      // 4️⃣ Salvar
+      await this.userRepo.save(user);
+    } catch (error) {
+      // Tratamento de erro dinâmico e preciso
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Falha ao associar condições de saúde ao usuário.',
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }

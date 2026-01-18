@@ -4,7 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './shared/auth/auth.module';
 import { TypeOrmModule } from './config/datasource';
-import { UsersModule } from './modules/users/users.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -29,6 +29,7 @@ import { EmailModule } from 'shared/email/email.module';
 import { MedicationSchedule } from '@database/entities/medication-schedules/medication-schedules.entity';
 import { FoodDataModule } from '@modules/food-data/food-data.module';
 import { AnalysisModule } from '@modules/analysis/analysis.module';
+import { UsersModule } from '@modules/users/users.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -75,6 +76,7 @@ import { AnalysisModule } from '@modules/analysis/analysis.module';
     MedicationSchedule,
     FoodDataModule,
     AnalysisModule,
+    ProfilesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -29,11 +29,8 @@ export class DietaryRoutineController {
   }
 
   @Post('create/dietary-routine')
-  create(
-    @Req() request: Request,
-    @Body() createDietaryRoutineDto: CreateDietaryRoutineDto,
-  ) {
-    return this.dietaryRoutineService.create(request, createDietaryRoutineDto);
+  create(@Body() createDietaryRoutineDto: CreateDietaryRoutineDto) {
+    return this.dietaryRoutineService.create(createDietaryRoutineDto);
   }
 
   @UseGuards(AuthGuard)
