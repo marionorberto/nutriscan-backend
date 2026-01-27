@@ -1,11 +1,4 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-} from 'class-validator';
-import { EnumPhysicalActivityLevel } from '../interfaces/interfaces';
+import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class UpdateClinicalProfileDto {
   @IsNumber({}, { message: '*Peso deve ser um número' })
@@ -24,8 +17,10 @@ export class UpdateClinicalProfileDto {
   bmi: number;
 
   @IsString({ message: '*Nivel_De_Actividade_Física deve ser um texto!' })
-  @IsEnum({ enum: EnumPhysicalActivityLevel })
   @IsNotEmpty({ message: '*Nivel_De_Actividade_Física não pode estar vazia!' })
   @IsOptional()
-  physicalActivityLevel: EnumPhysicalActivityLevel;
+  physicalActivityLevel: string;
+
+  @IsNotEmpty({ message: '*id não pode estar vazio!' })
+  id: string;
 }

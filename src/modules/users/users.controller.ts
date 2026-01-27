@@ -31,7 +31,7 @@ export class UsersController {
   // @UseGuards(AuthGuard)  -> ask for token
   @UseGuards(AuthGuard)
   @Get('user')
-  @UseInterceptors(ClassSerializerInterceptor)
+  // @UseInterceptors(ClassSerializerInterceptor)
   async findByPk(@Req() request: Request) {
     return await this.usersServices.findByPk(request);
   }

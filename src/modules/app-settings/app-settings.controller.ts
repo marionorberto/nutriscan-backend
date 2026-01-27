@@ -28,12 +28,13 @@ export class AppSettingsController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('setting/:id')
+  @Get('setting')
   @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Param('id') id: string, @Req() request: Request) {
-    return await this.appSettingsService.findByPk(id, request);
+  async findByPk(@Req() request: Request) {
+    return await this.appSettingsService.findByPk(request);
   }
 
+  @UseGuards(AuthGuard)
   @Post('create/setting')
   create(@Req() request: Request, @Body() createUserDto: CreateAppSettingsDto) {
     return this.appSettingsService.create(request, createUserDto);
@@ -42,11 +43,13 @@ export class AppSettingsController {
   @UseGuards(AuthGuard)
   @Put('update/setting')
   async updateOne(
-    @Param() id: string,
     @Req() request: Request,
-    @Body() updateUsersDto: UpdateAppSettingsDto,
+    @Body() updateAppSettingsDto: UpdateAppSettingsDto,
   ) {
-    return await this.appSettingsService.updateOne(id, request, updateUsersDto);
+    return await this.appSettingsService.updateOne(
+      request,
+      updateAppSettingsDto,
+    );
   }
 
   @UseGuards(AuthGuard)

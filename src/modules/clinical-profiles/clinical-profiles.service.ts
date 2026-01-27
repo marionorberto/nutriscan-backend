@@ -30,20 +30,22 @@ export class ClinicalProfilesService {
     try {
       const { userId } = request['user'];
 
-      const user = await this.userService.checkUserIsAuthenticated(userId);
+      const data = await this.clinicalProfileRepo.findOne({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+      });
 
-      if (user) {
-        const data = this.clinicalProfileRepo.findOneBy(userId);
-
-        return {
-          statusCode: 200,
-          method: 'GET',
-          message: 'Dados de perfil clínico encontradas com sucesso!',
-          data: data,
-          path: '/clinical-profiles/all',
-          timestamp: Date.now(),
-        };
-      }
+      return {
+        statusCode: 200,
+        method: 'GET',
+        message: 'Dados de perfil clínico encontradas com sucesso!',
+        data: data,
+        path: request.url,
+        timestamp: Date.now(),
+      };
     } catch (error) {
       throw new HttpException(
         {
@@ -55,7 +57,7 @@ export class ClinicalProfilesService {
           path: '/app-clinical-profiles/all',
           timestamp: Date.now(),
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -150,16 +152,17 @@ export class ClinicalProfilesService {
   }
 
   async updateOne(
-    id: string,
     request: Request,
     updateClinicalProfileDto: Partial<UpdateClinicalProfileDto>,
   ) {
     try {
-      const { idUser } = request['user'];
-
-      await this.userService.checkUserIsAuthenticated(idUser);
-
-      await this.clinicalProfileRepo.update(id, updateClinicalProfileDto);
+      await this.clinicalProfileRepo.update(updateClinicalProfileDto.id, {
+        ...updateClinicalProfileDto,
+        physicalActivityLevel:
+          EnumPhysicalActivityLevel[
+            updateClinicalProfileDto.physicalActivityLevel.toLocaleLowerCase()
+          ],
+      });
 
       const {
         height,
@@ -169,14 +172,16 @@ export class ClinicalProfilesService {
         active,
         createdAt,
         updatedAt,
-      } = await this.clinicalProfileRepo.findOneBy({ id });
+      } = await this.clinicalProfileRepo.findOneBy({
+        id: updateClinicalProfileDto.id,
+      });
 
       return {
         statusCode: 200,
         method: 'PUT',
         message: 'Dados Clínicos atualizadas com sucesso!',
         data: {
-          id,
+          id: updateClinicalProfileDto.id,
           height,
           weight,
           bmi,
@@ -185,7 +190,7 @@ export class ClinicalProfilesService {
           createdAt,
           updatedAt,
         },
-        path: '/clinical-profiles/update/clinical-profile/' + id,
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -196,7 +201,7 @@ export class ClinicalProfilesService {
           message:
             'Não foi possível atualizar dados, tente novamente mais tarde!',
           error: error.message,
-          path: '/clinical-profiles/update/clinical-profile/' + id,
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -280,3 +285,5 @@ export class ClinicalProfilesService {
     }
   }
 }
+
+// Exemplo Prático: Peso: 70 kgAltura: 1,75 mCálculo: \(70\div (1,75\times 1,75)=70\div 3,06=22,86\)Resultado: 22,86 (Peso Normal). Tabela de Classificação (Adultos): < 18,5: Abaixo do peso18,5 - 24,9: Peso normal25,0 - 29,9: Sobrepeso30,0 - 34,9: Obesidade grau I35,0 - 39,9: Obesidade grau II> 40,0: Obesidade grau III

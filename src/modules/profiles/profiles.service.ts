@@ -5,14 +5,19 @@ import { DataSource, Repository } from 'typeorm';
 import { Request } from 'express';
 import { EmailService } from 'shared/email/email.service';
 import { Profiles } from '@database/entities/profile/profile.entity';
+import { ProfileAdmin } from '@database/entities/profile-admin/profile-admin.entity';
+import { CreateProfilesAdminDto } from './dtos/create-profiles-admin.dto';
+import { UpdateProfilesAdminDto } from './dtos/update-profiles-admin.dto';
 @Injectable()
 export class ProfilesService {
   private profileRepo: Repository<Profiles>;
+  private profileAdminRepo: Repository<ProfileAdmin>;
   constructor(
     private readonly datasource: DataSource,
     private readonly emailService: EmailService,
   ) {
     this.profileRepo = this.datasource.getRepository(Profiles);
+    this.profileAdminRepo = this.datasource.getRepository(ProfileAdmin);
   }
 
   async findAll() {
@@ -54,8 +59,20 @@ export class ProfilesService {
   async findByPk(request: Request) {
     try {
       const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      const user = await this.profileRepo.findOneBy({ id: idUser });
+      console.log('idUser -> ', idUser);
+      console.log('userId -> ', userId);
+
+      const user = await this.profileRepo.findOne({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+      });
+
+      console.log('user -> ', user);
 
       if (!user)
         throw new HttpException(
@@ -63,7 +80,7 @@ export class ProfilesService {
             statusCode: 404,
             method: 'GET',
             message: 'Failure to fetch this user.',
-            path: '/users/user/:id',
+            path: request.url,
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
@@ -74,7 +91,61 @@ export class ProfilesService {
         method: 'GET',
         message: 'User fetched sucessfully.',
         data: user,
-        path: '/users/user/:id',
+        path: request.url,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.log(
+        `Failed to fetch this user. | Error Message: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          statusCode: 404,
+          method: 'GET',
+          message: 'Failed to fetch this user.',
+          error: error.message,
+          path: request.url,
+          timestamp: Date.now(),
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  async findProfileAdmin(request: Request) {
+    try {
+      const { userId } = request['user'];
+
+      const profile = await this.profileAdminRepo.findOne({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+        relations: {
+          user: true,
+        },
+      });
+
+      if (!profile)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'GET',
+            message: 'Registo não encontrado!',
+            path: request.url,
+            timestamp: Date.now(),
+          },
+          HttpStatus.NOT_FOUND,
+        );
+
+      return {
+        statusCode: 200,
+        method: 'GET',
+        message: 'Solicitação atendida com sucesso.',
+        data: profile,
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -186,24 +257,63 @@ export class ProfilesService {
     }
   }
 
+  async createAdmin(createProfilesDto: CreateProfilesAdminDto) {
+    try {
+      console.log(createProfilesDto);
+      const userToSave = this.profileAdminRepo.create(createProfilesDto);
+
+      const userSaved = await this.profileAdminRepo.save({
+        ...userToSave,
+        user: {
+          id: createProfilesDto.userID,
+        },
+      });
+
+      // const { id, address, birthday, gender, phone,  createdAt } = userSaved;
+
+      return {
+        statusCode: 201,
+        method: 'POST',
+        message: 'User created sucessfully',
+        data: userSaved,
+        path: '/users/create/user',
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.log(
+        `Failed  to create a new User | Error Message: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'POST',
+          message: `Falhou ao cadastrar usuário, ${error.message}`,
+          error: error.message,
+          path: '/users/create/user',
+          timestamp: Date.now(),
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async updateOne(
     request: Request,
-    UpdateProfilesDto: Partial<UpdateProfilesDto>,
+    updateProfilesDto: Partial<UpdateProfilesDto>,
   ) {
     try {
-      const { idUser: id } = request['user'];
-
-      await this.profileRepo.update(id, UpdateProfilesDto);
+      await this.profileRepo.update(updateProfilesDto.id, updateProfilesDto);
 
       const { address, birthday, phone, gender, createdAt, updatedAt } =
-        await this.profileRepo.findOneBy({ id });
+        await this.profileRepo.findOneBy({ id: updateProfilesDto.id });
 
       return {
         statusCode: 200,
         method: 'PUT',
         message: 'User updated sucessfully',
         data: {
-          id,
+          id: updateProfilesDto.id,
           address,
           birthday,
           phone,
@@ -226,6 +336,56 @@ export class ProfilesService {
           message: 'Não foi possível atualizar dados do usuário!',
           error: error.message,
           path: '/users/update/user/:id',
+          timestamp: Date.now(),
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async updateOneAdmin(
+    request: Request,
+    updateProfilesAdminDto: Partial<UpdateProfilesAdminDto>,
+  ) {
+    try {
+      await this.profileAdminRepo.update(
+        updateProfilesAdminDto.userID,
+        updateProfilesAdminDto,
+      );
+
+      const { address, birthday, phone, gender, createdAt, updatedAt } =
+        await this.profileAdminRepo.findOneBy({
+          id: updateProfilesAdminDto.userID,
+        });
+
+      return {
+        statusCode: 200,
+        method: 'PUT',
+        message: 'Solicitação atendida com sucesso!',
+        data: {
+          id: updateProfilesAdminDto.userID,
+          address,
+          birthday,
+          phone,
+          gender,
+          createdAt,
+          updatedAt,
+        },
+        path: request.url,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.log(
+        `Failed to update new User | Error Message: ${error.message}`,
+      );
+
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'PUT',
+          message: 'Não foi possível atualizar dados do usuário!',
+          error: error.message,
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

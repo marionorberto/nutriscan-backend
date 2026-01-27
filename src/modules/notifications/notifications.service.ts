@@ -4,7 +4,11 @@ import { DataSource, Repository } from 'typeorm';
 import { Request } from 'express';
 import { Notifications } from '@database/entities/notifications/notification.entity';
 import { UsersService } from '@modules/users/users.service';
-import { EnumCategory, EnumNotificationCreator } from './interfaces/interfaces';
+import {
+  EnumCategory,
+  EnumNotificationCreator,
+  EnumStatus,
+} from './interfaces/interfaces';
 import { UpdateNotificationsDto } from './dtos/update-notifications.dto';
 @Injectable()
 export class NotificationService {
@@ -14,11 +18,54 @@ export class NotificationService {
     this.notificationsRepository = this.datasource.getRepository(Notifications);
   }
 
+  async findAll(request: Request) {
+    try {
+      const { userId } = request['user'];
+
+      const allUserNotifications = await this.notificationsRepository.find({
+        relations: {
+          user: true,
+        },
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+        order: {
+          sendAt: 'DESC',
+        },
+      });
+
+      return {
+        statusCode: 200,
+        method: 'GET',
+        message: 'Requisição atendida com sucesso!.',
+        data: allUserNotifications,
+        path: request.url,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      console.log(
+        `Failed to fetch notifications | Error Message: ${error.message}`,
+      );
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'GET',
+          message: 'Failure to fetch notifications.',
+          path: request.url,
+          timestamp: Date.now(),
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   async findNotificationCreatedByAdmin(request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      const { data } = await this.userServices.findById(idUser);
+      const { data } = await this.userServices.findById(userId);
 
       const isAdminUserAction = this.userServices.checkUserIsAdmin(data);
 
@@ -74,9 +121,9 @@ export class NotificationService {
 
   async findNotificationCreatedBySystem(request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      const { data } = await this.userServices.findById(idUser);
+      const { data } = await this.userServices.findById(userId);
 
       const isAdminUserAction = this.userServices.checkUserIsAdmin(data);
 
@@ -132,9 +179,9 @@ export class NotificationService {
 
   async findUserNotificationByPk(id: string, request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userServices.checkUserIsAuthenticated(idUser);
+      this.userServices.checkUserIsAuthenticated(userId);
 
       const notification = this.notificationsRepository.findOneBy({ id });
 
@@ -170,11 +217,11 @@ export class NotificationService {
     createNotificationsDto: Partial<CreateNotificationsDto>,
   ) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userServices.checkUserIsAuthenticated(idUser);
+      this.userServices.checkUserIsAuthenticated(userId);
 
-      const { data } = await this.userServices.findById(idUser);
+      const { data } = await this.userServices.findById(userId);
 
       const isAdminUserAction = this.userServices.checkUserIsAdmin(data);
 
@@ -190,9 +237,12 @@ export class NotificationService {
           HttpStatus.FORBIDDEN,
         );
 
-      const notificationToSave = this.notificationsRepository.create(
-        createNotificationsDto,
-      );
+      const notificationToSave = this.notificationsRepository.create({
+        ...createNotificationsDto,
+        category: EnumCategory[createNotificationsDto.category],
+        createdBy: EnumNotificationCreator.admin,
+        status: EnumStatus.unread,
+      });
 
       notificationToSave.createdBy = EnumNotificationCreator.admin;
 
@@ -327,11 +377,11 @@ export class NotificationService {
     updateNotificationsDto: Partial<UpdateNotificationsDto>,
   ) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userServices.checkUserIsAuthenticated(idUser);
+      this.userServices.checkUserIsAuthenticated(userId);
 
-      const { data } = await this.userServices.findById(idUser);
+      const { data } = await this.userServices.findById(userId);
 
       const isAdminUserAction = this.userServices.checkUserIsAdmin(data);
 
@@ -407,11 +457,11 @@ export class NotificationService {
 
   async deleteOneByAdmin(idNotification: string, request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userServices.checkUserIsAuthenticated(idUser);
+      this.userServices.checkUserIsAuthenticated(userId);
 
-      const { data } = await this.userServices.findById(idUser);
+      const { data } = await this.userServices.findById(userId);
 
       const isAdminUserAction = this.userServices.checkUserIsAdmin(data);
 

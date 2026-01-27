@@ -29,6 +29,11 @@ export class AuthController {
     return await this.authService.signIn(signInDto);
   }
 
+  @Post('login-admin')
+  async signInAdmin(@Body() signInDto: SignInDto) {
+    return await this.authService.signInAdmin(signInDto);
+  }
+
   @Post('forgot-password')
   async forgotPassword(@Body('email') email: string) {
     const user = await this.userRepository.findOne({

@@ -4,19 +4,16 @@ import {
   MaxLength,
   MinLength,
   IsNumber,
-  IsEnum,
 } from 'class-validator';
-import { EnumFeedbackType } from '../interfaces/interfaces';
 
 export class CreateFeedbackDto {
   @IsNumber({}, { message: '*Avaliação deve ser um número!' })
   @IsNotEmpty({ message: '*Avaliação não poder estar vazio!' })
   rate: number;
 
-  @IsEnum({ message: '*tipo fora do padrão requerido.' })
   @IsString({ message: '*tipo não pode ser Inválida!' })
   @IsNotEmpty({ message: '*tipo não poder estar vazio!' })
-  feedbackType: EnumFeedbackType;
+  feedbackType: string;
 
   @IsString({ message: '*Comentário deve ser um texto!' })
   @IsNotEmpty({ message: '*Comentário não poder estar vazio!' })

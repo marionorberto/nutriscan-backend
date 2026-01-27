@@ -15,16 +15,16 @@ export class AppSettings {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id: string;
 
-  @Column({ name: 'save_image_history', type: 'boolean' })
+  @Column({ name: 'save_image_history', type: 'boolean', default: true })
   saveImageHistory: boolean;
 
-  @Column({ name: 'enable_nutricional_alert', type: 'boolean' })
+  @Column({ name: 'enable_nutricional_alert', type: 'boolean', default: true })
   enableNutricionalAlert: boolean;
 
-  @Column({ name: 'share_data_for_training', type: 'boolean' })
+  @Column({ name: 'share_data_for_training', type: 'boolean', default: true })
   shareDataForTraining: boolean;
 
-  @Column({ name: 'notification_enabled', type: 'boolean' })
+  @Column({ name: 'notification_enabled', type: 'boolean', default: true })
   notificationEnabled: boolean;
 
   @Column({

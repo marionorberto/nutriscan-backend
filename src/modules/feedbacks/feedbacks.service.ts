@@ -6,36 +6,22 @@ import { User } from '@database/entities/users/user.entity';
 import { Request } from 'express';
 import { UsersService } from '@modules/users/users.service';
 import { Feedbacks } from '@database/entities/feedbacks/feedback.entity';
+import { EnumFeedbackType } from './interfaces/interfaces';
 @Injectable()
 export class FeedbacksService {
   private userRepository: Repository<User>;
   private feedbackRepo: Repository<Feedbacks>;
-  private readonly userService: UsersService;
-  constructor(private readonly datasource: DataSource) {
+  constructor(
+    private readonly datasource: DataSource,
+    private readonly userService: UsersService,
+  ) {
     this.userRepository = this.datasource.getRepository(User);
+    this.feedbackRepo = this.datasource.getRepository(Feedbacks);
   }
 
-  async findAll(request: Request) {
+  async findAll() {
     try {
-      const { idUser } = request['user'];
-
-      const { data } = await this.userService.findById(idUser);
-
-      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
-
-      if (!isAdminUserAction)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'User do not have suficcient permission',
-            path: '/users/user/:id',
-            timestamp: Date.now(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-
-      const feedbacks = await this.feedbackRepo.findAndCount();
+      const feedbacks = await this.feedbackRepo.find();
 
       return {
         statusCode: 200,
@@ -54,7 +40,7 @@ export class FeedbacksService {
         {
           statusCode: 404,
           method: 'GET',
-          message: 'Failed to fetch this feedback.',
+          message: error.message,
           error: error.message,
           path: '/feedbacks/feedback/:id',
           timestamp: Date.now(),
@@ -64,34 +50,36 @@ export class FeedbacksService {
     }
   }
 
-  async findByPk(id: string, request: Request) {
+  async findByPk(request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userService.checkUserIsAuthenticated(idUser);
-
-      const feedback = this.feedbackRepo.findOneBy({ id });
+      const feedback = await this.feedbackRepo.findOne({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+      });
 
       return {
         statusCode: 200,
         method: 'GET',
-        message: 'Feedback fetched sucessfully.',
+        message: 'Registo encontrado com sucesso!',
         data: feedback,
-        path: '/feedbacks/feedback/:id',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
-      console.log(
-        `Failed to fetch this feedback. | Error Message: ${error.message}`,
-      );
+      console.log(`Error, finding feedback: ${error.message}`);
 
       throw new HttpException(
         {
           statusCode: 404,
           method: 'GET',
-          message: 'Failed to fetch this feedback.',
+          message: error.message,
           error: error.message,
-          path: '/feedbacks/feedback/:id',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.NOT_FOUND,
@@ -101,12 +89,18 @@ export class FeedbacksService {
 
   async create(request: Request, createFeedbackDto: CreateFeedbackDto) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userService.checkUserIsAuthenticated(idUser);
+      const user = await this.userService.checkUserIsAuthenticated(userId);
 
-      const feedbackToSave = this.feedbackRepo.create(createFeedbackDto);
-      const feedbackSaved = await this.feedbackRepo.save(feedbackToSave);
+      const feedbackToSave = this.feedbackRepo.create({
+        ...createFeedbackDto,
+        feedbackType: EnumFeedbackType[createFeedbackDto.feedbackType],
+      });
+      const feedbackSaved = await this.feedbackRepo.save({
+        ...feedbackToSave,
+        user,
+      });
 
       const { id, rate, comment, feedbackType, createdAt } = feedbackSaved;
 
@@ -121,7 +115,7 @@ export class FeedbacksService {
           feedbackType,
           createdAt,
         },
-        path: '/feedbacks/create/feedback',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -133,9 +127,9 @@ export class FeedbacksService {
         {
           statusCode: 400,
           method: 'POST',
-          message: `Falhou ao cadastrar feedback, ${error.message}`,
+          message: error.message,
           error: error.message,
-          path: '/feedbacks/create/feedback',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -144,33 +138,31 @@ export class FeedbacksService {
   }
 
   async updateOne(
-    id: string,
     request: Request,
-    UpdateFeedbackDto: Partial<UpdateFeedbackDto>,
+    updateFeedbackDto: Partial<UpdateFeedbackDto>,
   ) {
     try {
-      const { idUser } = request['user'];
-
-      this.userService.checkUserIsAuthenticated(idUser);
-
-      await this.feedbackRepo.update(id, UpdateFeedbackDto);
+      await this.feedbackRepo.update(updateFeedbackDto.id, {
+        ...updateFeedbackDto,
+        feedbackType: EnumFeedbackType[updateFeedbackDto.feedbackType],
+      });
 
       const { comment, rate, feedbackType, createdAt, updatedAt } =
-        await this.feedbackRepo.findOneBy({ id });
+        await this.feedbackRepo.findOneBy({ id: updateFeedbackDto.id });
 
       return {
         statusCode: 200,
         method: 'PUT',
-        message: 'User updated sucessfully',
+        message: 'Registo Atualizado com sucesso!',
         data: {
-          id,
+          id: updateFeedbackDto.id,
           comment,
           rate,
           feedbackType,
           createdAt,
           updatedAt,
         },
-        path: '/feedbacks/update/feedback/:id',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -182,9 +174,9 @@ export class FeedbacksService {
         {
           statusCode: 400,
           method: 'PUT',
-          message: 'Não foi possível atualizar dados do feedback!',
+          message: error.message,
           error: error.message,
-          path: '/feedbacks/update/feedback/:id',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

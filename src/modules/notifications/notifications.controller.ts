@@ -21,6 +21,12 @@ export class NotificationsController {
   constructor(private notificationsServices: NotificationService) {}
 
   @UseGuards(AuthGuard)
+  @Get('all')
+  async findAll(@Req() request: Request) {
+    return await this.notificationsServices.findAll(request);
+  }
+
+  @UseGuards(AuthGuard)
   @Get('all-admin-notifications')
   async findNotificationCreatedByAdmin(@Req() request: Request) {
     return await this.notificationsServices.findNotificationCreatedByAdmin(

@@ -35,12 +35,10 @@ export class DiabeteProfilesController {
   @UseGuards(AuthGuard)
   @Put('update/diabete-profile')
   async updateOne(
-    @Param() id: string,
     @Req() request: Request,
     @Body() updateDiabeteProfileDto: UpdateDiabeteProfileDto,
   ) {
     return await this.diabeteProfilesService.updateOne(
-      id,
       request,
       updateDiabeteProfileDto,
     );

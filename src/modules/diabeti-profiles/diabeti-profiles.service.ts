@@ -32,16 +32,14 @@ export class DiabeteProfilesService {
 
       const user = await this.userService.checkUserIsAuthenticated(userId);
 
-      console.log('user for di', user);
-
       if (user) {
         const data = await this.diabeteProfileRepo.findOne({
           where: {
-            user,
+            user: {
+              id: userId,
+            },
           },
         });
-
-        console.log('data di', data);
 
         return {
           statusCode: 200,
@@ -124,16 +122,27 @@ export class DiabeteProfilesService {
   }
 
   async updateOne(
-    id: string,
     request: Request,
     updateDiabeteProfileDto: Partial<UpdateDiabeteProfileDto>,
   ) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      await this.userService.checkUserIsAuthenticated(idUser);
+      await this.userService.checkUserIsAuthenticated(userId);
 
-      await this.diabeteProfileRepo.update(id, updateDiabeteProfileDto);
+      await this.diabeteProfileRepo.update(updateDiabeteProfileDto.id, {
+        ...updateDiabeteProfileDto,
+        currentStatus: EnumCurrentStatus[updateDiabeteProfileDto.currentStatus],
+        diabetiType: EnumDiabetiType[updateDiabeteProfileDto.diabetiType],
+        hyperGlycemiaFrequency:
+          EnumHyperGlycemiaFrequency[
+            updateDiabeteProfileDto.hyperGlycemiaFrequency
+          ],
+        hypoGlycemiaFrequency:
+          EnumHypoGlycemiaFrequency[
+            updateDiabeteProfileDto.hypoGlycemiaFrequency
+          ],
+      });
 
       const {
         currentStatus,
@@ -145,14 +154,16 @@ export class DiabeteProfilesService {
         lastHba1c,
         createdAt,
         updatedAt,
-      } = await this.diabeteProfileRepo.findOneBy({ id });
+      } = await this.diabeteProfileRepo.findOneBy({
+        id: updateDiabeteProfileDto.id,
+      });
 
       return {
         statusCode: 200,
         method: 'PUT',
         message: 'Dados Clínicos atualizadas com sucesso!',
         data: {
-          id,
+          id: updateDiabeteProfileDto.id,
           currentStatus,
           diabetiType,
           diagnosisYear,
@@ -163,7 +174,7 @@ export class DiabeteProfilesService {
           createdAt,
           updatedAt,
         },
-        path: '/diabete-profiles/update/diabete-profile/' + id,
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -174,7 +185,7 @@ export class DiabeteProfilesService {
           message:
             'Não foi possível atualizar dados, tente novamente mais tarde!',
           error: error.message,
-          path: '/diabete-profiles/update/diabete-profile/' + id,
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,

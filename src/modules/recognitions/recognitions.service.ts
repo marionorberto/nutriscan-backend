@@ -17,31 +17,13 @@ export class RecognitionService {
   }
   async findAll(request: Request) {
     try {
-      const { idUser } = request['user'];
-
-      const { data } = await this.userService.findById(idUser);
-
-      const isAdminUserAction = this.userService.checkUserIsAdmin(data);
-
-      if (!isAdminUserAction)
-        throw new HttpException(
-          {
-            statusCode: 404,
-            method: 'GET',
-            message: 'Registo c',
-            path: request.url,
-            timestamp: Date.now(),
-          },
-          HttpStatus.FORBIDDEN,
-        );
-
-      const feedbacks = await this.recognitionRepo.findAndCount();
+      const all = await this.recognitionRepo.find();
 
       return {
         statusCode: 200,
         method: 'GET',
-        message: 'Feedbacks fetched sucessfully.',
-        data: feedbacks,
+        message: 'Requisição atendida com sucesso!',
+        data: all,
         path: request.url,
         timestamp: Date.now(),
       };

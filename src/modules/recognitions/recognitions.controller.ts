@@ -17,12 +17,13 @@ import { UpdateRecognitionDto } from './dtos/update-recognitions.dto';
 import { AuthGuard } from '../../shared/auth/auth.guard';
 import { Request } from 'express';
 
-@Controller('users')
+@Controller('recognitions')
 export class RecognitionController {
   constructor(private readonly recognitionService: RecognitionService) {}
+
+  //all users recognitions
   @UseGuards(AuthGuard)
   @Get('all')
-  @UseInterceptors(ClassSerializerInterceptor)
   async findAll(@Req() request: Request) {
     return await this.recognitionService.findAll(request);
   }

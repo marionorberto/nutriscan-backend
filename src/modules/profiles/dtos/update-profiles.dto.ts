@@ -36,6 +36,6 @@ export class UpdateProfilesDto {
   @IsOptional()
   img: string;
 
-  @IsNotEmpty({ message: '*userID não pode estar vazia!' })
-  userID: string;
+  @IsNotEmpty({ message: '*id não pode estar vazia!' })
+  id: string;
 }

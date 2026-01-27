@@ -7,8 +7,6 @@ import {
   Put,
   Delete,
   UseGuards,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   Req,
 } from '@nestjs/common';
 import { FeedbacksService } from './feedbacks.service';
@@ -21,23 +19,21 @@ import { Request } from 'express';
 export class FeedbacksController {
   constructor(private readonly feedbackService: FeedbacksService) {}
 
-  @UseGuards(AuthGuard)
   @Get('all')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findAll(@Req() request: Request) {
-    return await this.feedbackService.findAll(request);
+  async findAll() {
+    return await this.feedbackService.findAll();
   }
 
   @UseGuards(AuthGuard)
   @Get('feedback')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Param() id: string, @Req() request: Request) {
-    return await this.feedbackService.findByPk(id, request);
+  async findByPk(@Req() request: Request) {
+    return await this.feedbackService.findByPk(request);
   }
 
+  @UseGuards(AuthGuard)
   @Post('create/feedback')
   create(
-    @Param() request: Request,
+    @Req() request: Request,
     @Body() createfeedbackDto: CreateFeedbackDto,
   ) {
     return this.feedbackService.create(request, createfeedbackDto);
@@ -46,15 +42,10 @@ export class FeedbacksController {
   @UseGuards(AuthGuard)
   @Put('update/feedback')
   async updateOne(
-    @Param() id: string,
     @Req() request: Request,
     @Body() updateFeedbacksDto: UpdateFeedbackDto,
   ) {
-    return await this.feedbackService.updateOne(
-      id,
-      request,
-      updateFeedbacksDto,
-    );
+    return await this.feedbackService.updateOne(request, updateFeedbacksDto);
   }
 
   @UseGuards(AuthGuard)

@@ -16,10 +16,12 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { EmailService } from 'shared/email/email.service';
 import { Profiles } from '@database/entities/profile/profile.entity';
 import { AssociatedConditions } from '@database/entities/associated-conditions/associated-condition.entity';
+import { ProfileAdmin } from '@database/entities/profile-admin/profile-admin.entity';
 @Injectable()
 export class UsersService {
   private userRepo: Repository<User>;
   private profileRepo: Repository<Profiles>;
+  private profileAdminRepo: Repository<ProfileAdmin>;
   private associatedConditionRepo: Repository<AssociatedConditions>;
   constructor(
     private readonly datasource: DataSource,
@@ -27,6 +29,7 @@ export class UsersService {
   ) {
     this.userRepo = this.datasource.getRepository(User);
     this.profileRepo = this.datasource.getRepository(Profiles);
+    this.profileAdminRepo = this.datasource.getRepository(ProfileAdmin);
     this.associatedConditionRepo =
       this.datasource.getRepository(AssociatedConditions);
   }
@@ -38,7 +41,6 @@ export class UsersService {
           createdAt: 'DESC',
         },
       });
-
       return {
         statusCode: 200,
         method: 'GET',
@@ -201,8 +203,9 @@ export class UsersService {
   }
 
   async updateOne(request: Request, updateUsersDto: Partial<UpdateUsersDto>) {
+    console.log(updateUsersDto);
     try {
-      const { idUser: id } = request['user'];
+      const { userId: id } = request['user'];
 
       if (updateUsersDto.password) {
         const salt = await bcryptjs.genSalt(10);
@@ -302,6 +305,23 @@ export class UsersService {
         },
       });
 
+      if (!userFetched.registrationCompleted) {
+        const whereStopped: string = await this.checkRegistrationCompleted(
+          userFetched.id,
+        );
+        throw new HttpException(
+          {
+            statusCode: 400,
+            method: 'GET',
+            message: 'Cadastramento incompleto',
+            link: 'whereStopped',
+            path: whereStopped,
+            timestamp: Date.now(),
+          },
+          HttpStatus.EXPECTATION_FAILED,
+        );
+      }
+
       if (!userFetched.active) {
         throw new HttpException(
           {
@@ -314,6 +334,7 @@ export class UsersService {
           HttpStatus.NOT_FOUND,
         );
       }
+
       if (!userFetched)
         throw new HttpException(
           {
@@ -335,8 +356,54 @@ export class UsersService {
         img: profileFetched.img,
       };
     } catch (error) {
-      console.log(`Failed to fetch User | Error Message: ${error.message}`);
+      throw new HttpException(
+        {
+          statusCode: 400,
+          method: 'POST',
+          message: error.message,
+          error: error.message,
+          link: error.link ?? '',
+          path: '/users/user/id',
+          timestamp: Date.now(),
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      );
+    }
+  }
 
+  async findOneAdmin(data: any) {
+    try {
+      const userFetched: User = await this.userRepo.findOne(data);
+      console.log(userFetched);
+      // const profileFetched: Profiles = await this.profileAdminRepo.findOne({
+      //   where: {
+      //     user: {
+      //       id: userFetched.id,
+      //     },
+      //   },
+      // });
+
+      if (!userFetched)
+        throw new HttpException(
+          {
+            statusCode: 404,
+            method: 'GET',
+            message: 'Usuário não encontrado/Autorizado.',
+            path: '/users/user/id',
+            timestamp: Date.now(),
+          },
+          HttpStatus.NOT_FOUND,
+        );
+
+      return {
+        id: userFetched.id,
+        username: userFetched.username,
+        email: userFetched.email,
+        role: userFetched.role,
+        password: userFetched.password,
+        // img: profileFetched.img,
+      };
+    } catch (error) {
       throw new HttpException(
         {
           statusCode: 400,
@@ -346,7 +413,7 @@ export class UsersService {
           path: '/users/user/id',
           timestamp: Date.now(),
         },
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.EXPECTATION_FAILED,
       );
     }
   }
@@ -356,7 +423,7 @@ export class UsersService {
     updatePasswordDTO: Partial<UpdatePasswordDto>,
   ) {
     try {
-      const { idUser: id } = request['user'];
+      const { userId: id } = request['user'];
 
       const isPasswordEqual =
         updatePasswordDTO.atualPassword === updatePasswordDTO.newPassword;
@@ -366,8 +433,8 @@ export class UsersService {
           {
             statusCode: 404,
             method: 'PUT',
-            message: 'Password devem ser iguais.',
-            path: '/password/user/update',
+            message: '🔴 Password não devem ser iguais.',
+            path: request.url,
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
@@ -389,8 +456,8 @@ export class UsersService {
           {
             statusCode: 404,
             method: 'PUT',
-            message: 'A atual password é inválida.',
-            path: '/password/user/update',
+            message: '🔴 A atual password é inválida.',
+            path: request.url,
             timestamp: Date.now(),
           },
           HttpStatus.NOT_FOUND,
@@ -414,7 +481,7 @@ export class UsersService {
       return {
         statusCode: 200,
         method: 'PUT',
-        message: 'Password updated sucessfully',
+        message: '🔴 Password atualizada com sucesso!',
         data: {
           id,
           username,
@@ -422,7 +489,7 @@ export class UsersService {
           createdAt,
           updatedAt,
         },
-        path: '/users/update/user/:id',
+        path: request.url,
         timestamp: Date.now(),
       };
     } catch (error) {
@@ -434,9 +501,9 @@ export class UsersService {
         {
           statusCode: 400,
           method: 'PUT',
-          message: 'Failed to update Password',
+          message: error.message,
           error: error.message,
-          path: '/users/password/user/update',
+          path: request.url,
           timestamp: Date.now(),
         },
         HttpStatus.BAD_REQUEST,
@@ -707,5 +774,70 @@ export class UsersService {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  async checkRegistrationCompleted(id: string): Promise<string> {
+    const whereStopped: string[] = [
+      'profile-screen',
+      'clinical-screen',
+      'allergies-screen',
+      'diabete-screen',
+      'dietary-screen',
+    ];
+
+    //profile
+    const profileFetched: Profiles = await this.profileRepo.findOne({
+      where: {
+        user: {
+          id,
+        },
+      },
+    });
+
+    if (!profileFetched) return whereStopped[0];
+
+    //clinical
+    const clinicalFetched: Profiles = await this.profileRepo.findOne({
+      where: {
+        user: {
+          id,
+        },
+      },
+    });
+
+    if (!clinicalFetched) return whereStopped[1];
+
+    //allergies
+    const allergiesFetched: Profiles = await this.profileRepo.findOne({
+      where: {
+        user: {
+          id,
+        },
+      },
+    });
+
+    if (!allergiesFetched) return whereStopped[2];
+
+    //diabete
+    const diabeteFetched: Profiles = await this.profileRepo.findOne({
+      where: {
+        user: {
+          id,
+        },
+      },
+    });
+
+    if (!diabeteFetched) return whereStopped[3];
+
+    //dietary
+    const dietaryFetched: Profiles = await this.profileRepo.findOne({
+      where: {
+        user: {
+          id,
+        },
+      },
+    });
+
+    if (!dietaryFetched) return whereStopped[4];
   }
 }

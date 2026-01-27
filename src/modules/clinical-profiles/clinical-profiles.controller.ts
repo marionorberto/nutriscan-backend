@@ -7,8 +7,6 @@ import {
   Put,
   Delete,
   UseGuards,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   Req,
 } from '@nestjs/common';
 import { ClinicalProfilesService } from './clinical-profiles.service';
@@ -24,8 +22,7 @@ export class ClinicalProfileController {
   ) {}
 
   @UseGuards(AuthGuard)
-  @Get('clinical-profile')
-  @UseInterceptors(ClassSerializerInterceptor)
+  @Get('one')
   async findOne(@Req() request: Request) {
     return await this.clinicalProfileService.findOne(request);
   }
@@ -38,12 +35,10 @@ export class ClinicalProfileController {
   @UseGuards(AuthGuard)
   @Put('update/clinical-profile')
   async updateOne(
-    @Param() id: string,
     @Req() request: Request,
     @Body() updateClinicalProfileDto: UpdateClinicalProfileDto,
   ) {
     return await this.clinicalProfileService.updateOne(
-      id,
       request,
       updateClinicalProfileDto,
     );

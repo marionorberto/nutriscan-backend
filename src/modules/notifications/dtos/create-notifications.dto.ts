@@ -1,12 +1,10 @@
 import {
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { EnumCategory } from '../interfaces/interfaces';
 
 export class CreateNotificationsDto {
   @MaxLength(100, { message: '*Título deve ter no máximo 100 caracteres.' })
@@ -34,6 +32,14 @@ export class CreateNotificationsDto {
 
   @IsString({ message: '*Categoria deve ser um texto.' })
   @IsNotEmpty({ message: '*Categoria não pode estar vazia.' })
-  @IsEnum({ Enum: EnumCategory })
-  category: EnumCategory;
+  category: string;
+
+  @IsNotEmpty({ message: '*Categoria não pode estar vazia.' })
+  readAt: string;
+
+  @IsNotEmpty({ message: '*Categoria não pode estar vazia.' })
+  status: string;
+
+  @IsOptional()
+  urlAction?: string;
 }

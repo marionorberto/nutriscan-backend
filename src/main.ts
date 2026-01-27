@@ -11,7 +11,9 @@ async function bootstrap() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
   app.setGlobalPrefix('api/v1/nutriscan');
-  app.enableCors();
+  app.enableCors({
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   const server = app.getHttpServer();
   server.setTimeout(120000); // 2 minutos (em milissegundos)
   app.useGlobalPipes(
