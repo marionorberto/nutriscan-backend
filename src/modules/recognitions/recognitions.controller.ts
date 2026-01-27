@@ -7,8 +7,6 @@ import {
   Put,
   Delete,
   UseGuards,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   Req,
 } from '@nestjs/common';
 import { RecognitionService } from './recognitions.service';
@@ -22,7 +20,6 @@ export class RecognitionController {
   constructor(private readonly recognitionService: RecognitionService) {}
 
   //all users recognitions
-  @UseGuards(AuthGuard)
   @Get('all')
   async findAll(@Req() request: Request) {
     return await this.recognitionService.findAll(request);
@@ -30,9 +27,8 @@ export class RecognitionController {
 
   @UseGuards(AuthGuard)
   @Get('recognition')
-  @UseInterceptors(ClassSerializerInterceptor)
-  async findByPk(@Param() id: string, @Req() request: Request) {
-    return await this.recognitionService.findByPk(id, request);
+  async findByPk(@Req() request: Request) {
+    return await this.recognitionService.findByPk(request);
   }
 
   @Post('create/recognition')

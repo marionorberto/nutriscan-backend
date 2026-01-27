@@ -70,11 +70,7 @@ export class AnalysisService {
       // response to frontend
       return {
         statusCode: 200,
-        method: 'GET',
-        message: 'Requisição atendida com sucesso!',
-        path: request.url,
-        timestamp: Date.now(),
-        result: preparetedDataToFrontend,
+        data: preparetedDataToFrontend,
       };
     } catch (error) {
       console.log('scan error ->', error.message);

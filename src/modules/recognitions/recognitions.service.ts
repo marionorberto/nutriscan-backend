@@ -17,7 +17,12 @@ export class RecognitionService {
   }
   async findAll(request: Request) {
     try {
-      const all = await this.recognitionRepo.find();
+      const all = await this.recognitionRepo.find({
+        relations: {
+          user: true,
+          foodItem: true,
+        },
+      });
 
       return {
         statusCode: 200,
@@ -42,13 +47,19 @@ export class RecognitionService {
     }
   }
 
-  async findByPk(id: string, request: Request) {
+  async findByPk(request: Request) {
     try {
-      const { idUser } = request['user'];
+      const { userId } = request['user'];
 
-      this.userService.checkUserIsAuthenticated(idUser);
+      this.userService.checkUserIsAuthenticated(userId);
 
-      const feedback = this.recognitionRepo.findOneBy({ id });
+      const feedback = this.recognitionRepo.findOne({
+        where: {
+          user: {
+            id: userId,
+          },
+        },
+      });
 
       return {
         statusCode: 200,
