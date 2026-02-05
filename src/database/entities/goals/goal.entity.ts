@@ -20,7 +20,7 @@ export class Goals {
   @Column({ name: 'target_fasting_glucose', type: 'decimal' })
   targetFastingGlucose: number;
 
-  @Column({ name: 'nutricional_goal', type: 'json' }) // can be reduce sugar,increase fiber, it will come on mobile
+  @Column({ name: 'nutricional_goal', type: 'json' })
   nutricionalGoal: EnumNutritionalGoal;
 
   @ManyToOne(() => User, (users) => users.goals)

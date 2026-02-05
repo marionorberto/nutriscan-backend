@@ -15,12 +15,12 @@ import { Exclude } from 'class-transformer';
 import { EnumTypeUser } from '../../../modules/profiles/interfaces/interfaces';
 import { Allergies } from '../allergies/allergy.entity';
 import { AssociatedConditions } from '../associated-conditions/associated-condition.entity';
-import { FoodItems } from '../food-items/food-item.entity';
 import { FoodRecomendations } from '../food-recomendations/food-recomendation.entity';
 import { Goals } from '../goals/goal.entity';
 import { Medications } from '../medications/medication.entity';
 import { Notifications } from '../notifications/notification.entity';
-import { Recognitions } from '../recognitions/recognition.entity';
+import { MealAnalysis } from '../meal-analyses/meal-analysis.entity';
+import { GlucoseLog } from '../glucose-control/glucose-control.entity';
 
 @Entity('users')
 export class User {
@@ -79,9 +79,6 @@ export class User {
   @JoinTable()
   associatedCondition: AssociatedConditions[];
 
-  @OneToMany(() => FoodItems, (foodItems) => foodItems.user)
-  foodItems: FoodItems[];
-
   @OneToMany(
     () => FoodRecomendations,
     (foodRecomendations) => foodRecomendations.user,
@@ -97,8 +94,11 @@ export class User {
   @OneToMany(() => Notifications, (notification) => notification.user)
   notifications: Notifications[];
 
-  @OneToMany(() => Recognitions, (recognition) => recognition.user)
-  recognitions: Recognitions[];
+  @OneToMany(() => GlucoseLog, (glucoseLog) => glucoseLog.user)
+  glucoseLogs: GlucoseLog[];
+
+  @OneToMany(() => GlucoseLog, (glucoseLog) => glucoseLog.user)
+  dailySummaries: GlucoseLog[];
 
   @ManyToMany(() => Allergies, {
     onUpdate: 'CASCADE',
@@ -107,6 +107,14 @@ export class User {
   })
   @JoinTable()
   allergies: Allergies[];
+
+  @ManyToMany(() => MealAnalysis, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    eager: true,
+  })
+  @JoinTable()
+  mealAnalysis: MealAnalysis[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;

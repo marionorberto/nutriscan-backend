@@ -10,9 +10,16 @@ import { DiabeteProfilesModule } from '@modules/diabeti-profiles/diabeti-profile
 import { UsersService } from '@modules/users/users.service';
 import { EmailService } from 'shared/email/email.service';
 import { DiabeteProfilesService } from '@modules/diabeti-profiles/diabeti-profiles.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [VisionModule, FoodDataModule, DiabeteProfilesModule, AIModule],
+  imports: [
+    VisionModule,
+    FoodDataModule,
+    DiabeteProfilesModule,
+    AIModule,
+    HttpModule,
+  ],
   controllers: [AnalysisController],
   providers: [
     AnalysisService,

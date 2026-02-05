@@ -11,10 +11,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { ReferenceImageModule } from './modules/reference-images/reference-images.module';
 import { MedicationModule } from './modules/medications/medications.module';
-import { RecognitionModule } from './modules/recognitions/recognitions.module';
-import { FoodItemsModule } from './modules/food-items/food-items.module';
 import { feedbacksModule } from './modules/feedbacks/feedbacks.module';
 import { GoalModule } from './modules/goals/goals.module';
 import { FoodRecomendationsModule } from './modules/food-recomendations/food-recomendations.module';
@@ -30,6 +27,9 @@ import { MedicationSchedule } from '@database/entities/medication-schedules/medi
 import { FoodDataModule } from '@modules/food-data/food-data.module';
 import { AnalysisModule } from '@modules/analysis/analysis.module';
 import { UsersModule } from '@modules/users/users.module';
+import { LogMealModule } from '@modules/logmeal/logmeal.module';
+import { MealAnalysisModule } from '@modules/meal-analysis/meal-analysis.module';
+import { GlucoseModule } from '@modules/glucose-log/glucose-log.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -59,10 +59,7 @@ import { UsersModule } from '@modules/users/users.module';
     AuthModule,
     UsersModule,
     NotificationsModule,
-    ReferenceImageModule,
     MedicationModule,
-    RecognitionModule,
-    FoodItemsModule,
     feedbacksModule,
     GoalModule,
     FoodRecomendationsModule,
@@ -77,6 +74,9 @@ import { UsersModule } from '@modules/users/users.module';
     FoodDataModule,
     AnalysisModule,
     ProfilesModule,
+    LogMealModule,
+    MealAnalysisModule,
+    GlucoseModule,
   ],
   controllers: [AppController],
   providers: [

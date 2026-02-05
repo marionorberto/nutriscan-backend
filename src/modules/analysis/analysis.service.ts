@@ -1,4 +1,3 @@
-// analysis/analysis.service.ts
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { VisionService } from '../vision/vision.service';
 import { FoodDataService } from '@modules/food-data/services/food-data.service';
@@ -6,15 +5,23 @@ import { DiabeteProfilesService } from '@modules/diabeti-profiles/diabeti-profil
 import { AIService } from '@modules/ai/services/ai.service';
 import { Request } from 'express';
 import { UsersService } from '@modules/users/users.service';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class AnalysisService {
+  // private readonly logger = new Logger(LogmealService.name);
+  private readonly apiKey: string = 'b1d8f62ef1bda2a36f3cf205fa277cca0ea91a77';
+  private readonly baseUrl = 'https://api.logmeal.com/v2/';
+  private readonly API_URL =
+    'https://api.logmeal.es/v2/image/segmentation/complete';
+  // private readonly API_TOKEN = 'b1d8f62ef1bda2a36f3cf205fa277cca0ea91a77';
   constructor(
     private readonly userService: UsersService,
     private readonly visionService: VisionService,
     private readonly foodDataService: FoodDataService,
     private readonly aiService: AIService,
     private readonly clinicalService: DiabeteProfilesService,
+    private readonly httpService: HttpService,
   ) {}
 
   async analyze(request: Request, image: Buffer) {
